@@ -13,7 +13,7 @@
     ];
 
     # Override cloudflared credentials (no real tunnel in test)
-    services.cloudflared.tunnels.homelab.credentialsFile = lib.mkForce (pkgs.writeText "dummy-creds" "{}");
+    services.cloudflared.tunnels.homelab.credentialsFile = lib.mkForce "${pkgs.writeText "dummy-creds" "{}"}";
 
     # Provide a dummy SSH key so common.nix evaluates
     homelab.sshKeys = [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAItest test@test" ];
