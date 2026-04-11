@@ -44,6 +44,7 @@
     checks.${linuxSystem} = {
       adguard = linuxPkgs.nixosTest (import ./tests/adguard-test.nix);
       caddy = linuxPkgs.nixosTest (import ./tests/caddy-test.nix);
+      integration = linuxPkgs.nixosTest (import ./tests/integration-test.nix);
     };
 
     devShells = forAllSystems (system:
