@@ -33,7 +33,7 @@ homelab/
 │   ├── adguard.nix                   # AdGuard Home: DNS blocking + firewall rules
 │   ├── caddy.nix                     # Caddy: reverse proxy with virtual hosts for all services
 │   ├── home-assistant.nix            # Home Assistant: home automation
-│   └── tailscale.nix                 # Tailscale: VPN mesh + firewall trust
+│   └── cloudflared.nix               # Cloudflare Tunnel: remote access via Cloudflare edge
 ├── tests/
 │   ├── adguard-test.nix              # VM test: DNS resolution + web UI
 │   ├── caddy-test.nix                # VM test: reverse proxy routing
@@ -555,31 +555,40 @@ git commit -m "feat: add Home Assistant module with Caddy proxy trust"
 
 ---
 
-### Task 5: Tailscale Module
+### Task 5: Cloudflare Tunnel Module
 
 **Files:**
-- Create: `modules/tailscale.nix`
+- Create: `modules/cloudflared.nix`
 - Modify: `hosts/nuc/default.nix` (add import)
 
-No standalone VM test — Tailscale needs external network access to authenticate. Tested in integration test (service starts).
+No standalone VM test — Cloudflare Tunnel needs external network access. Tested in integration test (service starts).
 
-- [ ] **Step 1: Write the Tailscale module**
+- [ ] **Step 1: Write the Cloudflare Tunnel module**
 
 ```nix
-# modules/tailscale.nix
+# modules/cloudflared.nix
 { config, lib, ... }:
 {
-  services.tailscale = {
-    enable = true;
-    # Auth key file created during setup. Tailscale reads it once on first start.
-    authKeyFile = lib.mkDefault "/etc/nixos/secrets/tailscale-auth-key";
+  options.homelab.domain = lib.mkOption {
+    type = lib.types.str;
+    default = "example.com";
+    description = "Your domain managed by Cloudflare.";
   };
 
-  # Trust all traffic from the Tailscale interface
-  networking.firewall.trustedInterfaces = [ "tailscale0" ];
-
-  # Allow Tailscale's UDP port
-  networking.firewall.allowedUDPPorts = [ config.services.tailscale.port ];
+  config = {
+    services.cloudflared = {
+      enable = true;
+      tunnels.homelab = {
+        # Credentials file created during setup via `cloudflared tunnel create`
+        credentialsFile = "/etc/nixos/secrets/cloudflared-tunnel.json";
+        ingress = {
+          "adguard.${config.homelab.domain}" = "http://localhost:3000";
+          "hass.${config.homelab.domain}" = "http://localhost:8123";
+        };
+        default = "http_status:404";
+      };
+    };
+  };
 }
 ```
 
@@ -588,7 +597,14 @@ No standalone VM test — Tailscale needs external network access to authenticat
 Add to `hosts/nuc/default.nix` imports:
 
 ```nix
-    ../../modules/tailscale.nix
+    ../../modules/cloudflared.nix
+```
+
+And in the CUSTOMIZE section, add:
+
+```nix
+  # Your Cloudflare-managed domain
+  homelab.domain = "example.com";
 ```
 
 - [ ] **Step 3: Verify and commit**
@@ -596,8 +612,8 @@ Add to `hosts/nuc/default.nix` imports:
 Run: `nix flake show`
 
 ```bash
-git add modules/tailscale.nix hosts/nuc/default.nix
-git commit -m "feat: add Tailscale VPN module with firewall trust"
+git add modules/cloudflared.nix hosts/nuc/default.nix
+git commit -m "feat: add Cloudflare Tunnel module for remote access"
 ```
 
 ---
@@ -624,11 +640,11 @@ Boots a VM with all modules and verifies every service starts and responds.
       ../modules/adguard.nix
       ../modules/caddy.nix
       ../modules/home-assistant.nix
-      ../modules/tailscale.nix
+      ../modules/cloudflared.nix
     ];
 
-    # Override tailscale auth key path (no real key in test)
-    services.tailscale.authKeyFile = lib.mkForce null;
+    # Override cloudflared credentials (no real tunnel in test)
+    services.cloudflared.tunnels.homelab.credentialsFile = lib.mkForce (pkgs.writeText "dummy-creds" "{}");
 
     # Provide a dummy SSH key so common.nix evaluates
     homelab.sshKeys = [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAItest test@test" ];
@@ -659,8 +675,8 @@ Boots a VM with all modules and verifies every service starts and responds.
     machine.wait_for_open_port(8123, timeout=180)
     machine.succeed("curl -sf http://localhost:8123 || curl -sf -o /dev/null -w '%{http_code}' http://localhost:8123 | grep -E '(200|401)'")
 
-    # Tailscale service started (won't authenticate without a real key)
-    machine.wait_for_unit("tailscaled.service")
+    # Cloudflare Tunnel service started (won't connect without real credentials)
+    machine.wait_for_unit("cloudflared-tunnel-homelab.service")
   '';
 }
 ```
@@ -796,15 +812,17 @@ echo "========================================"
 mkdir -p /mnt/etc/nixos/secrets
 
 echo ""
-echo "Tailscale auth key (generate at https://login.tailscale.com/admin/settings/keys)."
-echo "Leave blank to skip (you can run 'sudo tailscale up' manually after boot)."
-read -rp "Tailscale auth key: " TS_KEY
-if [[ -n "${TS_KEY}" ]]; then
-  echo "${TS_KEY}" > /mnt/etc/nixos/secrets/tailscale-auth-key
-  chmod 600 /mnt/etc/nixos/secrets/tailscale-auth-key
+echo "Cloudflare Tunnel credentials JSON."
+echo "Create a tunnel first: cloudflared tunnel create homelab"
+echo "Then copy the credentials file path shown in the output."
+echo "Leave blank to skip (you can set it up manually after boot)."
+read -rp "Path to credentials JSON (e.g., ~/.cloudflared/<uuid>.json): " CF_CREDS
+if [[ -n "${CF_CREDS}" && -f "${CF_CREDS}" ]]; then
+  cp "${CF_CREDS}" /mnt/etc/nixos/secrets/cloudflared-tunnel.json
+  chmod 600 /mnt/etc/nixos/secrets/cloudflared-tunnel.json
   echo "Saved."
 else
-  echo "Skipped. Run 'sudo tailscale up' after boot to authenticate."
+  echo "Skipped. Set up Cloudflare Tunnel manually after boot."
 fi
 
 # Copy repo to target for the flake reference
