@@ -5,6 +5,7 @@
     ./disk.nix
     ../../modules/common.nix
     ../../modules/adguard.nix
+    ../../modules/caddy.nix
   ];
 
   # ============================================================
