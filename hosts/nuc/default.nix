@@ -18,6 +18,7 @@
     prefixLength = 24;
   }];
   networking.defaultGateway = "192.168.1.1";
+  # Points to AdGuard Home on localhost — use "1.1.1.1" until AdGuard is running
   networking.nameservers = [ "127.0.0.1" ];
 
   time.timeZone = "America/New_York";
