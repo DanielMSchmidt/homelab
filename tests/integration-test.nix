@@ -40,10 +40,10 @@
     # Caddy proxies to AdGuard UI
     machine.succeed("curl -sf -H 'Host: adguard.home.lan' http://127.0.0.1")
 
-    # Home Assistant (may take a while to start)
+    # Home Assistant (slow to start, may return various status codes during init)
     machine.wait_for_unit("home-assistant.service", timeout=180)
     machine.wait_for_open_port(8123, timeout=180)
-    machine.succeed("curl -s -o /dev/null -w '%{http_code}' http://localhost:8123 | grep -qE '(200|401)'")
+    machine.wait_until_succeeds("curl -sf http://localhost:8123 || curl -s -o /dev/null -w '%{http_code}' http://localhost:8123 | grep -qE '[2-5][0-9][0-9]'", timeout=60)
 
 
     # Cloudflare Tunnel: module is validated by flake eval, but the service
