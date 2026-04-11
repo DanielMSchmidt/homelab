@@ -6,6 +6,7 @@
     ../../modules/common.nix
     ../../modules/adguard.nix
     ../../modules/caddy.nix
+    ../../modules/home-assistant.nix
   ];
 
   # ============================================================
