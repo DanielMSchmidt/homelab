@@ -15,7 +15,7 @@
     # Web UI responds
     machine.succeed("curl -sf http://localhost:3000")
 
-    # DNS responds to queries
-    machine.succeed("${pkgs.dnsutils}/bin/dig @127.0.0.1 example.com +short +timeout=5")
+    # DNS resolves queries successfully (not just listening, actually forwarding)
+    machine.succeed("${pkgs.dnsutils}/bin/dig @127.0.0.1 example.com +noall +comments +timeout=5 | grep -q 'NOERROR'")
   '';
 }

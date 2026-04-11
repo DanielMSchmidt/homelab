@@ -1,7 +1,9 @@
-{ config, lib, ... }:
+{ ... }:
 {
   services.adguardhome = {
     enable = true;
+    # Allow the web UI to persist filter/block list changes at runtime.
+    # The settings below only apply on first boot or after clearing AdGuard's state.
     mutableSettings = true;
     settings = {
       http.address = "0.0.0.0:3000";
