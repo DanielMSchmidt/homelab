@@ -4,6 +4,7 @@
     ./hardware.nix
     ./disk.nix
     ../../modules/common.nix
+    ../../modules/adguard.nix
   ];
 
   # ============================================================

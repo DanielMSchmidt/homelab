@@ -41,8 +41,9 @@
       };
     };
 
-    # Tests — added in later tasks
-    checks.${linuxSystem} = {};
+    checks.${linuxSystem} = {
+      adguard = linuxPkgs.nixosTest (import ./tests/adguard-test.nix);
+    };
 
     devShells = forAllSystems (system:
       let pkgs = import nixpkgs { inherit system; };
