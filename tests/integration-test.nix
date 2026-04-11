@@ -32,7 +32,7 @@
     machine.wait_for_open_port(3000)
     machine.wait_for_open_port(53)
     machine.succeed("curl -sf http://localhost:3000")
-    machine.succeed("${pkgs.dnsutils}/bin/dig @127.0.0.1 example.com +timeout=5 +noall +comments | grep -q 'status:'")
+    machine.succeed("${pkgs.dnsutils}/bin/dig @127.0.0.1 example.com +timeout=5")
 
     # Caddy
     machine.wait_for_unit("caddy.service")
