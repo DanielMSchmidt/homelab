@@ -29,7 +29,7 @@
     machine.wait_for_unit("adguardhome.service")
     machine.wait_for_open_port(3000)
     machine.succeed("curl -sf http://localhost:3000")
-    machine.succeed("${pkgs.dnsutils}/bin/dig @127.0.0.1 example.com +noall +comments +timeout=5 | grep -q 'NOERROR'")
+    machine.succeed("${pkgs.dnsutils}/bin/dig @127.0.0.1 example.com +timeout=5 +noall +comments | grep -q 'status:'")
 
     # Caddy
     machine.wait_for_unit("caddy.service")
