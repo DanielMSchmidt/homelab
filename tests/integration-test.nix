@@ -32,7 +32,8 @@
     machine.wait_for_open_port(3000)
     machine.wait_for_open_port(53)
     machine.succeed("curl -sf http://localhost:3000")
-    machine.succeed("${pkgs.dnsutils}/bin/dig @127.0.0.1 example.com +timeout=5")
+    # AdGuard may need time after opening port 53 before it processes queries
+    machine.wait_until_succeeds("${pkgs.dnsutils}/bin/dig @127.0.0.1 example.com +timeout=2", timeout=30)
 
     # Caddy
     machine.wait_for_unit("caddy.service")
