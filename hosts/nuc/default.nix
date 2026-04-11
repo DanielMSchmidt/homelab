@@ -7,6 +7,7 @@
     ../../modules/adguard.nix
     ../../modules/caddy.nix
     ../../modules/home-assistant.nix
+    ../../modules/cloudflared.nix
   ];
 
   # ============================================================
@@ -30,6 +31,9 @@
   homelab.sshKeys = [
     # "ssh-ed25519 AAAA... you@laptop"
   ];
+
+  # Your Cloudflare-managed domain
+  homelab.domain = "example.com";
 
   # ============================================================
 
