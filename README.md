@@ -165,12 +165,7 @@ If a deployment breaks something, SSH into the NUC:
 sudo nixos-rebuild switch --rollback
 ```
 
-Or pick a specific previous generation:
-
-```bash
-sudo nixos-rebuild switch --list-generations
-sudo nixos-rebuild switch --generation <number>
-```
+Or select a previous generation from the boot menu at startup. NixOS keeps all previous configurations in the bootloader.
 
 ### Adding Services
 

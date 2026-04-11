@@ -25,14 +25,5 @@ jobs:
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
         continue-on-error: true  # CI works without Cachix, just slower
 
-      - name: Check flake evaluates
+      - name: Check flake and run all tests
         run: nix flake check --print-build-logs
-
-      - name: Run AdGuard test
-        run: nix build .#checks.x86_64-linux.adguard --print-build-logs
-
-      - name: Run Caddy test
-        run: nix build .#checks.x86_64-linux.caddy --print-build-logs
-
-      - name: Run integration test
-        run: nix build .#checks.x86_64-linux.integration --print-build-logs

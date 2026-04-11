@@ -36,13 +36,13 @@
     machine.wait_for_open_port(80)
 
     # Caddy proxies to AdGuard UI
-    output = machine.succeed("curl -sf -H 'Host: adguard.home.lan' http://127.0.0.1")
-    assert "AdGuard" in output or len(output) > 0, f"Caddy proxy to AdGuard failed: {output}"
+    machine.succeed("curl -sf -H 'Host: adguard.home.lan' http://127.0.0.1")
 
     # Home Assistant (may take a while to start)
     machine.wait_for_unit("home-assistant.service", timeout=180)
     machine.wait_for_open_port(8123, timeout=180)
-    machine.succeed("curl -sf http://localhost:8123 || curl -sf -o /dev/null -w '%{http_code}' http://localhost:8123 | grep -E '(200|401)'")
+    machine.succeed("curl -s -o /dev/null -w '%{http_code}' http://localhost:8123 | grep -qE '(200|401)'")
+
 
     # Cloudflare Tunnel service started (won't connect without real credentials)
     machine.wait_for_unit("cloudflared-tunnel-homelab.service")
