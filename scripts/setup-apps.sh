@@ -45,33 +45,49 @@ if [[ "${AG_HAS_USERS}" -gt 0 ]] && ! $FORCE; then
 else
   echo "  Generating password hash (downloads python+bcrypt on first run)..."
 
-  # Write a self-contained script to the NUC and run it there — no escaping issues
-  cat <<'REMOTE_SCRIPT' | ssh "${TARGET}" 'cat > /tmp/setup-adguard.sh'
+  # Send password to NUC via temp file, generate bcrypt hash there
+  echo -n "${ADGUARD_PASS}" | ssh "${TARGET}" 'cat > /tmp/.ag-pass'
+
+  # Write the hash script and run it
+  cat <<'REMOTE_SCRIPT' | ssh "${TARGET}" 'cat > /tmp/setup-adguard.sh && chmod +x /tmp/setup-adguard.sh'
 #!/usr/bin/env bash
 set -euo pipefail
-PASSWORD="$1"
-USERNAME="$2"
 
-# Generate bcrypt hash
+# Generate bcrypt hash from password file
 HASH=$(nix-shell -p python3Packages.bcrypt --run "python3 -c \"
-import bcrypt, sys
-pw = sys.argv[1].encode()
+import bcrypt
+pw = open('/tmp/.ag-pass','rb').read()
 print(bcrypt.hashpw(pw, bcrypt.gensalt()).decode())
-\" \"${PASSWORD}\"")
+\"")
+rm -f /tmp/.ag-pass
 
-# Stop AdGuard, update config, restart
+# Stop AdGuard
 sudo systemctl stop adguardhome
 
-# Edit AdGuard config — replace existing users section or empty one
-sudo sed -i '/^users:/,/^[a-z]/{ /^users:/{ s|.*|users:\n- name: '"${USERNAME}"'\n  password: '"${HASH}"'| }; /^- name:/d; /^  password:/d; }' /var/lib/AdGuardHome/AdGuardHome.yaml
-# Fallback: if the simple pattern didn't match, try the empty array pattern
-sudo sed -i "s|^users: \[\]|users:\n- name: ${USERNAME}\n  password: ${HASH}|" /var/lib/AdGuardHome/AdGuardHome.yaml
+# Replace users section using awk (handles both empty [] and existing users)
+sudo awk -v hash="$HASH" '
+BEGIN { skip=0 }
+/^users:/ {
+  print "users:"
+  print "- name: admin"
+  print "  password: " hash
+  skip=1
+  next
+}
+skip && /^[^ -]/ { skip=0 }
+skip { next }
+{ print }
+' /var/lib/AdGuardHome/AdGuardHome.yaml > /tmp/adguard-fixed.yaml
 
+sudo cp /tmp/adguard-fixed.yaml /var/lib/AdGuardHome/AdGuardHome.yaml
+rm -f /tmp/adguard-fixed.yaml
+
+# Restart AdGuard
 sudo systemctl start adguardhome
 echo "DONE"
 REMOTE_SCRIPT
 
-  RESULT=$(ssh "${TARGET}" "bash /tmp/setup-adguard.sh '${ADGUARD_PASS}' 'admin'; rm -f /tmp/setup-adguard.sh" 2>&1)
+  RESULT=$(ssh "${TARGET}" "bash /tmp/setup-adguard.sh; rm -f /tmp/setup-adguard.sh" 2>&1)
 
   if echo "${RESULT}" | grep -q "DONE"; then
     echo "  ✓ AdGuard Home account created (user: admin)"
