@@ -21,5 +21,19 @@
         default = "http_status:404";
       };
     };
+
+    # Origin cert must be readable by cloudflared and in a default search path
+    environment.etc."cloudflared/cert.pem" = {
+      source = "/etc/nixos/secrets/cloudflared-cert.pem";
+      mode = "0644";
+    };
+
+    # Ensure credentials file is readable by the cloudflared service
+    systemd.services.cloudflared-tunnel-homelab.serviceConfig.ExecStartPre =
+      "+${lib.getExe' config.services.cloudflared.package "cloudflared"} version || true";
+    systemd.tmpfiles.rules = [
+      "z /etc/nixos/secrets/cloudflared-tunnel.json 0644 root root -"
+      "z /etc/nixos/secrets/cloudflared-cert.pem 0644 root root -"
+    ];
   };
 }

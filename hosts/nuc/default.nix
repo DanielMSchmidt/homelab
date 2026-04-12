@@ -17,8 +17,9 @@
 
   networking.hostName = "nuc";
 
-  # Static IP — change to match your LAN
-  networking.interfaces.eno1.ipv4.addresses = [{
+  # Static IP — change interface name and address to match your LAN
+  # Find your interface name with: ip link
+  networking.interfaces.enp100s0.ipv4.addresses = [{
     address = "192.168.178.83";
     prefixLength = 24;
   }];
