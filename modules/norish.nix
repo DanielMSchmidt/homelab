@@ -98,14 +98,22 @@ in
   };
 
   # Make all container services wait for the network
-  systemd.services."podman-${dbContainer}".after = [ "podman-norish-network.service" ];
-  systemd.services."podman-${dbContainer}".requires = [ "podman-norish-network.service" ];
-  systemd.services."podman-${redisContainer}".after = [ "podman-norish-network.service" ];
-  systemd.services."podman-${redisContainer}".requires = [ "podman-norish-network.service" ];
-  systemd.services."podman-${chromeContainer}".after = [ "podman-norish-network.service" ];
-  systemd.services."podman-${chromeContainer}".requires = [ "podman-norish-network.service" ];
-  systemd.services."podman-norish".after = [ "podman-norish-network.service" ];
-  systemd.services."podman-norish".requires = [ "podman-norish-network.service" ];
+  systemd.services."podman-${dbContainer}" = {
+    after = [ "podman-norish-network.service" ];
+    requires = [ "podman-norish-network.service" ];
+  };
+  systemd.services."podman-${redisContainer}" = {
+    after = [ "podman-norish-network.service" ];
+    requires = [ "podman-norish-network.service" ];
+  };
+  systemd.services."podman-${chromeContainer}" = {
+    after = [ "podman-norish-network.service" ];
+    requires = [ "podman-norish-network.service" ];
+  };
+  systemd.services."podman-norish" = {
+    after = [ "podman-norish-network.service" ];
+    requires = [ "podman-norish-network.service" ];
+  };
 
   networking.firewall.allowedTCPPorts = [ 8083 ];
 }
