@@ -180,6 +180,68 @@ else
   NORISH_PASS="(setup failed — configure manually)"
 fi
 
+# --- CrowdSec ---
+echo "Setting up CrowdSec firewall bouncer..."
+
+BOUNCER_CONFIG="/etc/nixos/secrets/crowdsec-bouncer.yaml"
+BOUNCER_EXISTS=$(ssh "${TARGET}" "sudo test -f ${BOUNCER_CONFIG} && echo 'yes' || echo 'no'" | tail -1)
+
+if [[ "${BOUNCER_EXISTS}" == "yes" ]] && ! $FORCE; then
+  echo "  Bouncer config already exists. Skipping. (use --force to recreate)"
+else
+  # Wait for CrowdSec to be ready
+  echo "  Waiting for CrowdSec engine..."
+  for i in $(seq 1 30); do
+    if ssh "${TARGET}" "sudo cscli -c /etc/crowdsec/config.yaml machines list" &>/dev/null; then
+      break
+    fi
+    sleep 2
+  done
+
+  # Register bouncer and get API key
+  BOUNCER_KEY=$(ssh "${TARGET}" "sudo cscli -c /etc/crowdsec/config.yaml bouncers add firewall-bouncer --output raw 2>/dev/null || \
+    sudo cscli -c /etc/crowdsec/config.yaml bouncers delete firewall-bouncer 2>/dev/null && \
+    sudo cscli -c /etc/crowdsec/config.yaml bouncers add firewall-bouncer --output raw")
+
+  if [[ -n "${BOUNCER_KEY}" ]]; then
+    # Write bouncer config with the API key
+    ssh "${TARGET}" "sudo tee ${BOUNCER_CONFIG} > /dev/null" <<BOUNCER_EOF
+mode: nftables
+update_frequency: 10s
+log_mode: stdout
+log_level: info
+api_url: http://127.0.0.1:8080/
+api_key: ${BOUNCER_KEY}
+disable_ipv6: false
+deny_action: DROP
+deny_log: false
+nftables:
+  ipv4:
+    enabled: true
+    set-only: false
+    table: crowdsec
+    chain: crowdsec-chain
+    priority: -10
+  ipv6:
+    enabled: true
+    set-only: false
+    table: crowdsec6
+    chain: crowdsec6-chain
+    priority: -10
+nftables_hooks:
+  - input
+  - forward
+BOUNCER_EOF
+    ssh "${TARGET}" "sudo chmod 600 ${BOUNCER_CONFIG}"
+    echo "  ✓ CrowdSec bouncer registered and config written"
+
+    # Restart the bouncer to pick up the config
+    ssh "${TARGET}" "sudo systemctl restart crowdsec-firewall-bouncer" || true
+  else
+    echo "  Warning: Could not register CrowdSec bouncer. Set up manually."
+  fi
+fi
+
 # --- Store in 1Password ---
 echo ""
 echo "Storing credentials in 1Password..."
