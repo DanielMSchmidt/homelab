@@ -10,6 +10,8 @@
     ../../modules/cloudflared.nix
     ../../modules/homepage.nix
     ../../modules/norish.nix
+    ../../modules/auto-upgrade.nix
+    ../../modules/crowdsec.nix
     ../../modules/backup.nix
   ];
 
