@@ -15,5 +15,5 @@ echo ""
 colmena apply --on "${HOST}" --verbose --impure
 
 echo ""
-echo "Deployment complete. If something is broken, SSH into the NUC and run:"
-echo "  sudo nixos-rebuild switch --rollback"
+echo "Deployment complete. If something is broken:"
+echo "  ssh nuc 'sudo nixos-rebuild switch --rollback'"
