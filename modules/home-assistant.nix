@@ -7,6 +7,8 @@
         name = "Home";
         unit_system = "metric";
         time_zone = config.time.timeZone;
+        country = "DE";
+        currency = "EUR";
       };
       # Trust Caddy reverse proxy
       http = {
