@@ -55,6 +55,9 @@ echo "  ✓ Cloudflare origin certificate"
 NORISH_ENV=$(op item get "${ITEM_NAME}" --fields norish_env)
 echo "  ✓ Norish env file"
 
+CROWDSEC_BOUNCER=$(op item get "${ITEM_NAME}" --fields crowdsec_bouncer)
+echo "  ✓ CrowdSec bouncer config"
+
 echo ""
 echo "Writing secrets to ${TARGET}..."
 
@@ -75,6 +78,10 @@ echo "  ✓ Cloudflare origin certificate"
 echo "${NORISH_ENV}" | ssh "${TARGET}" "sudo tee /etc/nixos/secrets/norish-env > /dev/null"
 ssh "${TARGET}" "sudo chmod 644 /etc/nixos/secrets/norish-env"
 echo "  ✓ Norish env file"
+
+echo "${CROWDSEC_BOUNCER}" | ssh "${TARGET}" "sudo tee /etc/nixos/secrets/crowdsec-bouncer.yaml > /dev/null"
+ssh "${TARGET}" "sudo chmod 600 /etc/nixos/secrets/crowdsec-bouncer.yaml"
+echo "  ✓ CrowdSec bouncer config"
 
 echo ""
 echo "✓ All secrets restored to ${TARGET}"

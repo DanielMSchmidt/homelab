@@ -46,6 +46,9 @@ echo "  ✓ Cloudflare origin certificate"
 NORISH_ENV=$(ssh nuc 'sudo cat /etc/nixos/secrets/norish-env')
 echo "  ✓ Norish env file"
 
+CROWDSEC_BOUNCER=$(ssh nuc 'sudo cat /etc/nixos/secrets/crowdsec-bouncer.yaml')
+echo "  ✓ CrowdSec bouncer config"
+
 echo ""
 
 # Delete existing item if it exists (to avoid duplicates)
@@ -67,6 +70,7 @@ op item create \
   "tunnel_credentials[password]=${TUNNEL_CREDS}" \
   "origin_cert[password]=${ORIGIN_CERT}" \
   "norish_env[password]=${NORISH_ENV}" \
+  "crowdsec_bouncer[password]=${CROWDSEC_BOUNCER}" \
   "SSH Command[text]=ssh nuc" \
   "AdGuard Home[text]=http://192.168.178.83:3000" \
   "Home Assistant[text]=http://192.168.178.83:8123" \
