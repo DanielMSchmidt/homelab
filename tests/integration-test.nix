@@ -11,6 +11,8 @@
       ../modules/home-assistant.nix
       ../modules/cloudflared.nix
       ../modules/norish.nix
+      ../modules/auto-upgrade.nix
+      ../modules/crowdsec.nix
     ];
 
     # Disable cloudflared in test — it needs real Cloudflare credentials and network
@@ -25,6 +27,14 @@
     systemd.services."podman-norish-db".enable = lib.mkForce false;
     systemd.services."podman-norish-redis".enable = lib.mkForce false;
     systemd.services."podman-norish-chrome".enable = lib.mkForce false;
+
+    # Disable CrowdSec in test — needs runtime initialization (hub download,
+    # machine registration) that doesn't work in a test VM.
+    systemd.services.crowdsec.enable = lib.mkForce false;
+    systemd.services.crowdsec-firewall-bouncer.enable = lib.mkForce false;
+
+    # Disable auto-upgrade in test — needs network access to GitHub
+    system.autoUpgrade.enable = lib.mkForce false;
 
     # Provide a dummy SSH key so common.nix evaluates
     homelab.sshKeys = [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAItest test@test" ];
@@ -60,5 +70,8 @@
 
     # Norish: module is validated by flake eval, but containers are disabled
     # in test (needs image pulls + container runtime not available in test VM)
+
+    # CrowdSec and auto-upgrade: modules validated by flake eval,
+    # services disabled in test (need runtime init / network access)
   '';
 }
