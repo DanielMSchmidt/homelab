@@ -55,18 +55,17 @@ echo "Creating '${ITEM_NAME}' in 1Password..."
 
 # Create the item with all secrets as fields
 op item create \
-  --category=server \
+  --category=login \
   --title="${ITEM_NAME}" \
-  --url="http://192.168.178.83" \
-  "restic_password=${RESTIC_PASSWORD}" \
+  --url="http://192.168.178.83:8082" \
+  "username=admin" \
+  "password=changeme" \
+  "restic_password[password]=${RESTIC_PASSWORD}" \
   "tunnel_credentials[password]=${TUNNEL_CREDS}" \
   "origin_cert[password]=${ORIGIN_CERT}" \
-  "Admin Username[text]=admin" \
-  "Admin Password[password]=changeme" \
   "SSH Command[text]=ssh nuc" \
-  "AdGuard Home[url]=http://192.168.178.83:3000" \
-  "Home Assistant[url]=http://192.168.178.83:8123" \
-  "Dashboard[url]=http://192.168.178.83:8082" \
+  "AdGuard Home[text]=http://192.168.178.83:3000" \
+  "Home Assistant[text]=http://192.168.178.83:8123" \
   > /dev/null
 
 echo ""
