@@ -10,9 +10,10 @@
   config = {
     services.cloudflared = {
       enable = true;
-      tunnels.homelab = {
+      tunnels."ae02ca43-9696-4ab7-8b73-f81c943f7d72" = {
         # Credentials file created during setup via `cloudflared tunnel create`
         credentialsFile = "/etc/nixos/secrets/cloudflared-tunnel.json";
+        originRequest.originServerName = config.homelab.domain;
         ingress = {
           "adguard.${config.homelab.domain}" = "http://localhost:3000";
           "hass.${config.homelab.domain}" = "http://localhost:8123";
