@@ -59,24 +59,8 @@ print(bcrypt.hashpw(pw, bcrypt.gensalt()).decode())
 # Stop AdGuard, update config, restart
 sudo systemctl stop adguardhome
 
-# Use a temp file for the sed replacement to handle special chars in hash
-sudo python3 -c "
-with open('/var/lib/AdGuardHome/AdGuardHome.yaml') as f:
-    c = f.read()
-c = c.replace('users: []', '''users:
-- name: ${USERNAME}
-  password: ${HASH}''')
-with open('/var/lib/AdGuardHome/AdGuardHome.yaml', 'w') as f:
-    f.write(c)
-" 2>/dev/null || nix-shell -p python3 --run "python3 -c \"
-with open('/var/lib/AdGuardHome/AdGuardHome.yaml') as f:
-    c = f.read()
-c = c.replace('users: []', '''users:
-- name: ${USERNAME}
-  password: ${HASH}''')
-with open('/var/lib/AdGuardHome/AdGuardHome.yaml', 'w') as f:
-    f.write(c)
-\""
+# Edit AdGuard config using sed (available without nix-shell)
+sudo sed -i "s|^users: \[\]|users:\n- name: ${USERNAME}\n  password: ${HASH}|" /var/lib/AdGuardHome/AdGuardHome.yaml
 
 sudo systemctl start adguardhome
 echo "DONE"
