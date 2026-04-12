@@ -19,7 +19,7 @@ in
       ];
       http.address = "0.0.0.0:3000";
       dns = {
-        bind_hosts = [ "0.0.0.0" ];
+        bind_hosts = [ nucIp "127.0.0.1" ];
         port = 53;
         upstream_dns = [
           "1.1.1.1"
