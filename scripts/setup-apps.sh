@@ -51,25 +51,10 @@ if [[ "${AG_USERS}" == "AUTH_REQUIRED" ]]; then
   echo "  AdGuard Home already has an account configured. Skipping."
   ADGUARD_PASS="(already configured)"
 else
-  # Generate bcrypt hash on the NUC
-  AG_HASH=$(ssh "${TARGET}" "nix-shell -p apacheHttpd --run \"htpasswd -nbBC 10 '' '${ADGUARD_PASS}' | cut -d: -f2\"" 2>/dev/null)
-
-  if [[ -z "${AG_HASH}" ]]; then
-    # Fallback: use python3 for bcrypt
-    AG_HASH=$(ssh "${TARGET}" "python3 -c \"import hashlib, base64, os; import crypt; print(crypt.crypt('${ADGUARD_PASS}', crypt.mksalt(crypt.METHOD_BLOWFISH)))\"" 2>/dev/null || true)
-  fi
-
-  if [[ -z "${AG_HASH}" ]]; then
-    echo "  Warning: Could not generate bcrypt hash. Setting password via web API..."
-    # Use the web API to set the password directly
-    ssh "${TARGET}" "curl -sf http://localhost:3000/control/users/add \
-      -H 'Content-Type: application/json' \
-      -d '{\"name\":\"${ADGUARD_USER}\",\"password\":\"${ADGUARD_PASS}\"}'" > /dev/null
-  else
-    ssh "${TARGET}" "curl -sf http://localhost:3000/control/users/add \
-      -H 'Content-Type: application/json' \
-      -d '{\"name\":\"${ADGUARD_USER}\",\"password\":\"${ADGUARD_PASS}\"}'" > /dev/null
-  fi
+  # AdGuard API accepts plaintext passwords and hashes internally
+  ssh "${TARGET}" "curl -sf http://localhost:3000/control/users/add \
+    -H 'Content-Type: application/json' \
+    -d '{\"name\":\"${ADGUARD_USER}\",\"password\":\"${ADGUARD_PASS}\"}'" > /dev/null
   echo "  ✓ AdGuard Home account created (user: ${ADGUARD_USER})"
 fi
 
