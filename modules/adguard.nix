@@ -1,4 +1,9 @@
-{ ... }:
+{ config, lib, ... }:
+let
+  # NUC's static IP — used for DNS rewrites so local devices resolve directly
+  nucIp = (builtins.head config.networking.interfaces.eno1.ipv4.addresses).address;
+  domain = config.homelab.domain;
+in
 {
   services.adguardhome = {
     enable = true;
@@ -14,6 +19,14 @@
           "1.1.1.1"
           "9.9.9.9"
           "8.8.8.8"
+        ];
+        # Local DNS rewrites — devices on the LAN resolve to NUC directly,
+        # bypassing Cloudflare. Same URLs work both locally and remotely.
+        rewrites = [
+          { domain = "*.home.lan"; answer = nucIp; }
+          { domain = "adguard.${domain}"; answer = nucIp; }
+          { domain = "hass.${domain}"; answer = nucIp; }
+          { domain = "home.${domain}"; answer = nucIp; }
         ];
       };
     };
