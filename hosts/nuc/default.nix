@@ -8,6 +8,7 @@
     ../../modules/caddy.nix
     ../../modules/home-assistant.nix
     ../../modules/cloudflared.nix
+    ../../modules/homepage.nix
   ];
 
   # ============================================================
