@@ -3,22 +3,28 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     disko = {
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
-  outputs = { self, nixpkgs, disko, ... }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, disko, ... }:
   let
     linuxSystem = "x86_64-linux";
-    linuxPkgs = import nixpkgs { system = linuxSystem; };
+    unstablePkgs = import nixpkgs-unstable { system = linuxSystem; };
+    overlay = final: prev: {
+      crowdsec-firewall-bouncer = unstablePkgs.crowdsec-firewall-bouncer;
+    };
+    linuxPkgs = import nixpkgs { system = linuxSystem; overlays = [ overlay ]; };
     forAllSystems = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-darwin" "aarch64-linux" ];
   in
   {
     nixosConfigurations.nuc = nixpkgs.lib.nixosSystem {
       system = linuxSystem;
       modules = [
+        { nixpkgs.overlays = [ overlay ]; }
         disko.nixosModules.disko
         ./hosts/nuc
       ];
