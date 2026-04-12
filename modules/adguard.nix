@@ -6,10 +6,17 @@ in
 {
   services.adguardhome = {
     enable = true;
-    # Allow the web UI to persist filter/block list changes at runtime.
-    # The settings below only apply on first boot or after clearing AdGuard's state.
-    mutableSettings = true;
+    # Immutable — NixOS config is the source of truth. Changes via the web UI
+    # are overwritten on every deploy. Edit this file instead.
+    mutableSettings = false;
     settings = {
+      users = [
+        {
+          name = "admin";
+          # bcrypt hash — safe to commit (not reversible)
+          password = "$2b$12$lzdgdpcznbAEDLKDIxGsyer2dRXHHX28jODLSkxraAD4qFiFuACP6";
+        }
+      ];
       http.address = "0.0.0.0:3000";
       dns = {
         bind_hosts = [ "0.0.0.0" ];
