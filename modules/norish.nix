@@ -79,6 +79,7 @@ in
         REDIS_URL = "redis://${redisContainer}:6379";
         CHROME_WS_ENDPOINT = "ws://${chromeContainer}:3000";
         AUTH_URL = "https://norish.${config.homelab.domain}";
+        PASSWORD_AUTH_ENABLED = "true";
       };
       environmentFiles = [
         "/etc/nixos/secrets/norish-env"

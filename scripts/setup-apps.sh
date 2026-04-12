@@ -161,6 +161,29 @@ else
   echo "  ✓ Norish master key generated and written to /etc/nixos/secrets/norish-env"
 fi
 
+# Create initial admin account (first user becomes server owner)
+NORISH_PASS=$(head -c 32 /dev/urandom | base64 | tr -d '/+=\n' | head -c 30)
+
+NORISH_SIGNUP=$(ssh "${TARGET}" "curl -sf -X POST http://localhost:8083/api/auth/sign-up/email \
+  -H 'Content-Type: application/json' \
+  -d '{\"name\":\"Admin\",\"email\":\"admin@norish.local\",\"password\":\"${NORISH_PASS}\",\"callbackURL\":\"/\"}'" 2>/dev/null || echo "FAILED")
+
+if echo "${NORISH_SIGNUP}" | grep -q "FAILED\|error"; then
+  # Check if it failed because a user already exists (registration disabled)
+  NORISH_CHECK=$(ssh "${TARGET}" "curl -sf http://localhost:8083/api/auth/sign-up/email -X POST \
+    -H 'Content-Type: application/json' \
+    -d '{\"name\":\"test\",\"email\":\"test@test.local\",\"password\":\"testtest99\",\"callbackURL\":\"/\"}'" 2>&1 || true)
+  if echo "${NORISH_CHECK}" | grep -qi "registration\|disabled\|not allowed"; then
+    echo "  Admin account already exists. Skipping."
+    NORISH_PASS="(already configured)"
+  else
+    echo "  Warning: Could not create admin account. Create manually at http://192.168.178.83:8083"
+    NORISH_PASS="(setup failed — configure manually)"
+  fi
+else
+  echo "  ✓ Norish admin account created (admin@norish.local)"
+fi
+
 # --- Store in 1Password ---
 echo ""
 echo "Storing credentials in 1Password..."
@@ -192,13 +215,16 @@ if [[ "${HA_PASS}" != "(already configured)" && "${HA_PASS}" != "(setup failed"*
   echo "  ✓ Created 'Homelab - Home Assistant' in 1Password"
 fi
 
-if [[ "${NORISH_KEY}" != "(already configured)" ]]; then
+if [[ "${NORISH_PASS}" != "(already configured)" && "${NORISH_PASS}" != "(setup failed"* ]]; then
   op item delete "Homelab - Norish" --archive 2>/dev/null || true
   op item create \
     --category=login \
     --title="Homelab - Norish" \
     --url="http://192.168.178.83:8083" \
-    "master_key[password]=${NORISH_KEY}" \
+    "username=admin@norish.local" \
+    "password=${NORISH_PASS}" \
+    "master_key[password]=${NORISH_KEY:-$(ssh "${TARGET}" 'sudo grep MASTER_KEY /etc/nixos/secrets/norish-env | cut -d= -f2')}" \
+    "Tunnel URL[url]=https://norish.danielmschmidt.de" \
     "Local URL[url]=http://norish.home.lan" \
     > /dev/null
   echo "  ✓ Created 'Homelab - Norish' in 1Password"
