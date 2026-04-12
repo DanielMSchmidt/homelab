@@ -11,7 +11,7 @@ set -euo pipefail
 
 TUNNEL_NAME="homelab"
 DOMAIN="danielmschmidt.de"
-SUBDOMAINS=("adguard" "hass" "home")
+SUBDOMAINS=("adguard" "hass" "home" "norish")
 
 echo "========================================"
 echo "  Set Up Cloudflare Tunnel"
