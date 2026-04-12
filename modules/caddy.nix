@@ -3,6 +3,16 @@
   services.caddy = {
     enable = true;
 
+    globalConfig = ''
+      log {
+        output file /var/log/caddy/access.log {
+          roll_size 50MiB
+          roll_keep 3
+        }
+        format json
+      }
+    '';
+
     virtualHosts."http://adguard.home.lan".extraConfig = ''
       reverse_proxy localhost:3000
     '';
