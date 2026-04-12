@@ -14,6 +14,10 @@
     virtualHosts."http://home.home.lan".extraConfig = ''
       reverse_proxy localhost:8082
     '';
+
+    virtualHosts."http://norish.home.lan".extraConfig = ''
+      reverse_proxy localhost:8083
+    '';
   };
 
   networking.firewall.allowedTCPPorts = [ 80 443 ];
