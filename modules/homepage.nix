@@ -1,4 +1,7 @@
 { config, lib, ... }:
+let
+  domain = config.homelab.domain;
+in
 {
   services.homepage-dashboard = {
     enable = true;
@@ -17,7 +20,7 @@
           {
             "AdGuard Home" = {
               icon = "adguard-home";
-              href = "http://adguard.home.lan";
+              href = "https://adguard.${domain}";
               description = "DNS-level ad & malware blocking";
               widget = {
                 type = "adguard";
@@ -28,7 +31,7 @@
           {
             "Home Assistant" = {
               icon = "home-assistant";
-              href = "http://hass.home.lan";
+              href = "https://hass.${domain}";
               description = "Home automation";
             };
           }
