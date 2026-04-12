@@ -124,6 +124,14 @@ in
       Group = "crowdsec";
       ExecStartPre = let
         initScript = pkgs.writeShellScript "crowdsec-init" ''
+          # Create placeholder credential files so cscli doesn't fail on missing refs
+          for f in local_api_credentials.yaml online_api_credentials.yaml console.yaml; do
+            if [ ! -f ${dataDir}/credentials/$f ]; then
+              echo "{}" > ${dataDir}/credentials/$f
+              chown crowdsec:crowdsec ${dataDir}/credentials/$f
+            fi
+          done
+
           # Update hub index and install collections on first run
           if [ ! -f ${dataDir}/hub/.index.json ]; then
             ${cscli} hub update
@@ -133,14 +141,12 @@ in
           fi
 
           # Register machine if not already registered
-          if [ ! -f ${dataDir}/credentials/local_api_credentials.yaml ] || \
-             ! grep -q "login:" ${dataDir}/credentials/local_api_credentials.yaml; then
+          if ! grep -q "login:" ${dataDir}/credentials/local_api_credentials.yaml 2>/dev/null; then
             ${cscli} machines add nuc --auto --force
           fi
 
           # Register with CAPI (community blocklists) if not done
-          if [ ! -f ${dataDir}/credentials/online_api_credentials.yaml ] || \
-             ! grep -q "login:" ${dataDir}/credentials/online_api_credentials.yaml; then
+          if ! grep -q "login:" ${dataDir}/credentials/online_api_credentials.yaml 2>/dev/null; then
             ${cscli} capi register || true
           fi
         '';
