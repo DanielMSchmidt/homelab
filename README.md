@@ -195,8 +195,81 @@ This repo contains **zero secrets**. Sensitive data lives only on the NUC:
 | Secret | Location on NUC | How It Gets There |
 |---|---|---|
 | Cloudflare Tunnel credentials | `/etc/nixos/secrets/cloudflared-tunnel.json` | Setup script or manual copy |
+| Cloudflare origin cert | `/etc/nixos/secrets/cloudflared-cert.pem` | Setup script or manual copy |
+| Restic backup password | `/etc/nixos/secrets/restic-password` | Auto-generated, **save in password manager** |
 | AdGuard admin password | AdGuard Home's own database | Setup wizard on first boot |
 | Home Assistant account | Home Assistant's own database | Setup wizard on first boot |
+
+## Backups
+
+Restic backs up service data to the USB stick (`/mnt/backup`) daily at 3am. Retention: 7 daily, 4 weekly, 6 monthly snapshots.
+
+**What's backed up:**
+- `/var/lib/AdGuardHome` — AdGuard Home config, filter lists, query logs
+- `/var/lib/hass` — Home Assistant config, automations, database
+- `/etc/nixos/secrets` — Cloudflare credentials, restic password, certs
+
+### Check backup status
+
+```bash
+# List snapshots
+ssh nuc 'sudo restic -r /mnt/backup/restic --password-file /etc/nixos/secrets/restic-password snapshots'
+
+# Run a backup manually
+ssh nuc 'sudo systemctl start restic-backups-usb.service'
+```
+
+### Restore from backup (full reinstall)
+
+If you need to set up the NUC from scratch and restore from the USB backup:
+
+1. **Install NixOS** as normal (boot from USB, run `scripts/setup.sh`)
+
+2. **Reboot into the installed system** and SSH in: `ssh nuc`
+
+3. **Mount the backup USB** (should auto-mount, verify with `mount | grep backup`)
+
+4. **Find the restic password** — it's in the backup itself, but you need it to decrypt. If you saved it somewhere, use that. Otherwise the backup is unrecoverable. Consider saving it in your password manager.
+
+5. **List available snapshots:**
+   ```bash
+   sudo restic -r /mnt/backup/restic --password-file /etc/nixos/secrets/restic-password snapshots
+   ```
+
+6. **Stop services before restoring:**
+   ```bash
+   sudo systemctl stop home-assistant adguardhome
+   ```
+
+7. **Restore the data:**
+   ```bash
+   # Restore everything from the latest snapshot
+   sudo restic -r /mnt/backup/restic --password-file /etc/nixos/secrets/restic-password restore latest --target /
+
+   # Or restore a specific snapshot (use ID from step 5)
+   sudo restic -r /mnt/backup/restic --password-file /etc/nixos/secrets/restic-password restore <snapshot-id> --target /
+   ```
+
+   This restores files to their original paths:
+   - `/var/lib/AdGuardHome` — AdGuard skips the setup wizard, keeps your filters and settings
+   - `/var/lib/hass` — Home Assistant keeps your automations, integrations, and history
+   - `/etc/nixos/secrets` — Cloudflare Tunnel credentials and certs are restored
+
+8. **Restart services:**
+   ```bash
+   sudo systemctl start adguardhome home-assistant
+   ```
+
+9. **Verify** — open AdGuard Home and Home Assistant in your browser. Your settings, accounts, and data should all be there.
+
+### Important: save your restic password
+
+The restic password is auto-generated during setup and stored at `/etc/nixos/secrets/restic-password` on the NUC. **Save it in your password manager.** Without it, the backup is encrypted and unrecoverable.
+
+```bash
+# Show the password (save it somewhere safe)
+ssh nuc 'sudo cat /etc/nixos/secrets/restic-password'
+```
 
 ## Repository Structure
 
@@ -212,6 +285,8 @@ modules/
   caddy.nix            # Caddy reverse proxy
   home-assistant.nix   # Home Assistant automation
   cloudflared.nix      # Cloudflare Tunnel for remote access
+  homepage.nix         # Homepage dashboard
+  backup.nix           # Restic backups to USB stick
 tests/
   adguard-test.nix     # VM test: DNS + web UI
   caddy-test.nix       # VM test: proxy routing
