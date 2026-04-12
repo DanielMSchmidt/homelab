@@ -2,6 +2,9 @@
 {
   services.home-assistant = {
     enable = true;
+    extraComponents = [
+      "hue"
+    ];
     config = {
       homeassistant = {
         name = "Home";
