@@ -313,6 +313,7 @@ tests/
   integration-test.nix # VM test: all services together
 scripts/
   setup.sh             # Bootstrap from NixOS live USB
+  setup-apps.sh        # Create AdGuard Home + Home Assistant accounts, store in 1Password
   secrets-to-op.sh     # Store all secrets in 1Password
   secrets-from-op.sh   # Restore secrets from 1Password to NUC
   restore-backup.sh    # Restore service data from restic USB backup
