@@ -53,7 +53,7 @@ fi
 echo "Setting up AdGuard Home..."
 
 # Check if AdGuard already has users configured
-AG_HAS_USERS=$(ssh "${TARGET}" 'sudo grep -A1 "^users:" /var/lib/AdGuardHome/AdGuardHome.yaml | grep -c "name:"' 2>/dev/null || echo "0")
+AG_HAS_USERS=$(ssh "${TARGET}" 'sudo grep -A1 "^users:" /var/lib/AdGuardHome/AdGuardHome.yaml | grep -c "name:" 2>/dev/null || echo 0' | tail -1)
 
 if [[ "${AG_HAS_USERS}" -gt 0 ]]; then
   echo "  AdGuard Home already has users configured. Skipping."
