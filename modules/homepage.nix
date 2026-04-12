@@ -35,6 +35,13 @@ in
               description = "Home automation";
             };
           }
+          {
+            "Norish" = {
+              icon = "mdi-food-apple";
+              href = "https://norish.${domain}";
+              description = "Recipe manager";
+            };
+          }
         ];
       }
     ];
