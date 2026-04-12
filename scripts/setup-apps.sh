@@ -37,24 +37,44 @@ if ! op whoami &>/dev/null; then
   exit 1
 fi
 
-# Generate random passwords
-ADGUARD_PASS=$(head -c 16 /dev/urandom | base64 | tr -d '/+=' | head -c 20)
-HA_PASS=$(head -c 16 /dev/urandom | base64 | tr -d '/+=' | head -c 20)
+# Generate strong passwords (30 chars, alphanumeric + symbols)
+ADGUARD_PASS=$(op item create --generate-password='30,letters,digits,symbols' --dry-run --category=login --title=tmp 2>/dev/null | grep -o 'password.*' | head -1 | cut -d'"' -f3 || head -c 32 /dev/urandom | base64 | tr -d '/+=' | head -c 30)
+HA_PASS=$(op item create --generate-password='30,letters,digits,symbols' --dry-run --category=login --title=tmp 2>/dev/null | grep -o 'password.*' | head -1 | cut -d'"' -f3 || head -c 32 /dev/urandom | base64 | tr -d '/+=' | head -c 30)
+
+# Fallback if op password gen didn't work
+if [[ -z "${ADGUARD_PASS}" ]]; then
+  ADGUARD_PASS=$(head -c 32 /dev/urandom | base64 | tr -d '/+=' | head -c 30)
+fi
+if [[ -z "${HA_PASS}" ]]; then
+  HA_PASS=$(head -c 32 /dev/urandom | base64 | tr -d '/+=' | head -c 30)
+fi
 
 # --- AdGuard Home ---
 echo "Setting up AdGuard Home..."
 
 # Check if AdGuard already has users configured
-AG_USERS=$(ssh "${TARGET}" 'curl -sf http://localhost:3000/control/profile' 2>/dev/null || echo "AUTH_REQUIRED")
+AG_CONFIG=$(ssh "${TARGET}" 'sudo grep "^users:" /var/lib/AdGuardHome/AdGuardHome.yaml' 2>/dev/null || echo "")
+AG_HAS_USERS=$(ssh "${TARGET}" 'sudo grep -A1 "^users:" /var/lib/AdGuardHome/AdGuardHome.yaml | grep -c "name:" || echo 0' 2>/dev/null)
 
-if [[ "${AG_USERS}" == "AUTH_REQUIRED" ]]; then
-  echo "  AdGuard Home already has an account configured. Skipping."
+if [[ "${AG_HAS_USERS}" -gt 0 ]]; then
+  echo "  AdGuard Home already has users configured. Skipping."
   ADGUARD_PASS="(already configured)"
 else
-  # AdGuard API accepts plaintext passwords and hashes internally
-  ssh "${TARGET}" "curl -sf http://localhost:3000/control/users/add \
-    -H 'Content-Type: application/json' \
-    -d '{\"name\":\"${ADGUARD_USER}\",\"password\":\"${ADGUARD_PASS}\"}'" > /dev/null
+  # Generate bcrypt hash on the NUC
+  echo "  Generating password hash (may take a moment)..."
+  ESCAPED_PASS=$(printf '%s' "${ADGUARD_PASS}" | sed 's/\\/\\\\/g; s/"/\\"/g')
+  AG_HASH=$(ssh "${TARGET}" "nix-shell -p python3Packages.bcrypt --run 'python3 -c \"import bcrypt; print(bcrypt.hashpw(b\\\"${ESCAPED_PASS}\\\", bcrypt.gensalt()).decode())\"'" 2>/dev/null)
+
+  if [[ -z "${AG_HASH}" ]]; then
+    echo "  Error: Failed to generate bcrypt hash."
+    exit 1
+  fi
+
+  # Stop AdGuard, inject user into config, restart
+  ssh "${TARGET}" "sudo systemctl stop adguardhome"
+  ssh "${TARGET}" "sudo sed -i 's/^users: \[\]/users:\n- name: ${ADGUARD_USER}\n  password: ${AG_HASH}/' /var/lib/AdGuardHome/AdGuardHome.yaml"
+  ssh "${TARGET}" "sudo systemctl start adguardhome"
+
   echo "  ✓ AdGuard Home account created (user: ${ADGUARD_USER})"
 fi
 
@@ -70,13 +90,14 @@ if [[ -z "${HA_USER_DONE}" ]]; then
   HA_PASS="(already configured)"
 else
   # Create the initial user via onboarding API
+  ESCAPED_HA_PASS=$(printf '%s' "${HA_PASS}" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')
   HA_RESPONSE=$(ssh "${TARGET}" "curl -sf http://localhost:8123/api/onboarding/users \
     -H 'Content-Type: application/json' \
     -d '{
       \"client_id\": \"http://localhost:8123/\",
       \"name\": \"${HA_NAME}\",
       \"username\": \"${HA_USER}\",
-      \"password\": \"${HA_PASS}\",
+      \"password\": ${ESCAPED_HA_PASS},
       \"language\": \"en\"
     }'" 2>/dev/null)
 
@@ -114,9 +135,9 @@ else
       echo "  ✓ Home Assistant onboarding completed"
     fi
   else
-    echo "  Warning: Home Assistant onboarding returned unexpected response."
+    echo "  Warning: Unexpected response from Home Assistant."
     echo "  ${HA_RESPONSE}"
-    HA_PASS="(setup failed — configure manually)"
+    HA_PASS="(setup failed — configure manually at http://192.168.178.83:8123)"
   fi
 fi
 
@@ -125,10 +146,7 @@ echo ""
 echo "Updating 1Password..."
 
 if op item get "${OP_ITEM}" &>/dev/null; then
-  # Update existing item with app credentials
   op item edit "${OP_ITEM}" \
-    "username=${ADGUARD_USER}" \
-    "password=${ADGUARD_PASS}" \
     "AdGuard Home Username[text]=${ADGUARD_USER}" \
     "AdGuard Home Password[password]=${ADGUARD_PASS}" \
     "Home Assistant Username[text]=${HA_USER}" \
