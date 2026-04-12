@@ -227,9 +227,16 @@ If you need to set up the NUC from scratch and restore from the USB backup:
 
 2. **Reboot into the installed system** and SSH in: `ssh nuc`
 
-3. **Mount the backup USB** (should auto-mount, verify with `mount | grep backup`)
+3. **Restore secrets from 1Password** (if you used `secrets-to-op.sh`):
+   ```bash
+   eval $(op signin)
+   bash scripts/secrets-from-op.sh
+   ```
+   This restores restic password, Cloudflare credentials, and certs. Skip to step 5.
 
-4. **Find the restic password** — it's in the backup itself, but you need it to decrypt. If you saved it somewhere, use that. Otherwise the backup is unrecoverable. Consider saving it in your password manager.
+   If you don't use 1Password, continue manually:
+
+4. **Mount the backup USB** (should auto-mount, verify with `mount | grep backup`)
 
 5. **List available snapshots:**
    ```bash
@@ -262,14 +269,27 @@ If you need to set up the NUC from scratch and restore from the USB backup:
 
 9. **Verify** — open AdGuard Home and Home Assistant in your browser. Your settings, accounts, and data should all be there.
 
-### Important: save your restic password
+### 1Password integration (recommended)
 
-The restic password is auto-generated during setup and stored at `/etc/nixos/secrets/restic-password` on the NUC. **Save it in your password manager.** Without it, the backup is encrypted and unrecoverable.
+Store all secrets in 1Password so a fresh install can pull them automatically:
 
 ```bash
-# Show the password (save it somewhere safe)
+# After initial setup — store secrets from NUC into 1Password
+eval $(op signin)
+bash scripts/secrets-to-op.sh
+
+# During a fresh install — restore secrets from 1Password to NUC
+eval $(op signin)
+bash scripts/secrets-from-op.sh
+```
+
+If you don't use 1Password, save the restic password manually:
+
+```bash
 ssh nuc 'sudo cat /etc/nixos/secrets/restic-password'
 ```
+
+**Save it in your password manager.** Without it, the backup is encrypted and unrecoverable.
 
 ## Repository Structure
 

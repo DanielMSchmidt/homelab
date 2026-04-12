@@ -101,7 +101,14 @@ echo "  Secrets Setup"
 echo "========================================"
 mkdir -p /mnt/etc/nixos/secrets
 
+# Generate restic backup password
+head -c 32 /dev/urandom | base64 > /mnt/etc/nixos/secrets/restic-password
+chmod 644 /mnt/etc/nixos/secrets/restic-password
+echo "Generated restic backup password."
+echo "IMPORTANT: Save this password in your password manager!"
+echo "  Password: $(cat /mnt/etc/nixos/secrets/restic-password)"
 echo ""
+
 echo "Cloudflare Tunnel credentials."
 echo "You need two files from 'cloudflared tunnel create homelab':"
 echo "  1. Tunnel credentials JSON (e.g., ~/.cloudflared/<uuid>.json)"
