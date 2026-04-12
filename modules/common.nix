@@ -7,6 +7,12 @@
     description = "SSH public keys for the admin user.";
   };
 
+  options.homelab.lanAddress = lib.mkOption {
+    type = lib.types.str;
+    default = "192.168.1.50";
+    description = "NUC's static LAN IP address, used for DNS rewrites.";
+  };
+
   # When mixing options and config in a module, config must be explicit
   config = {
     # Nix settings

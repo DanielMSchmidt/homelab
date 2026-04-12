@@ -34,6 +34,9 @@
     "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQD7qgSYyYFOSJn0CxHoprbfD8MSVLRkjixC/bvnvrs9E0ifF/6hrNr9F3PXFip4veSMru6uAPv8otmaqW89N8YnNlKG+Vrch6pPDNc+RtgVi7R++qXT1kb3Q8vRdSA5D9krAlcgauzvFWcgkfDCyZCYDqtequrCLoPVX7mfdkEW9Bl98y264VDJwUEuoOHqWvC1eh4ZEu0iIbG7UF1xKEJORoBeB35rf+t39UfWLxxGac3WluwClqgbkQlDMr6o3MtxDz9Jv7YpyKWHuVTOmA+VkMASH0ppSHOoLn3Pdl7gXliicqpCOqeQ824GR15RDQW4Gnil6EYNPjCyuXVkeWTkB6gl/kEhvChmPmGCs+K83YiuSfFBHIxMKYXrj1yv3nJJwvtM91uoPAGPVP1N7JvB7eFQmhUFjUL9fFcmHfHZ+NDzkgxCGd/SOX6ppUhMUBf9GbfUvnTSyXKJ1J1Hky2cg+r9E0H1xkhwD/DGGj5JBkEq+czkhqg9OybB7AtCqkk= dschmidt@dschmidt-C02FK2YEMD6R"
   ];
 
+  # NUC's LAN IP — must match the static IP above
+  homelab.lanAddress = "192.168.178.83";
+
   # Your Cloudflare-managed domain
   homelab.domain = "danielmschmidt.de";
 

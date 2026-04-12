@@ -1,7 +1,6 @@
 { config, lib, ... }:
 let
-  # NUC's static IP — used for DNS rewrites so local devices resolve directly
-  nucIp = (builtins.head config.networking.interfaces.eno1.ipv4.addresses).address;
+  nucIp = config.homelab.lanAddress;
   domain = config.homelab.domain;
 in
 {
