@@ -146,6 +146,21 @@ EOF
   fi
 fi
 
+# --- Norish ---
+echo "Setting up Norish..."
+
+NORISH_KEY_EXISTS=$(ssh "${TARGET}" 'sudo test -f /etc/nixos/secrets/norish-env && echo "yes" || echo "no"' | tail -1)
+
+if [[ "${NORISH_KEY_EXISTS}" == "yes" ]] && ! $FORCE; then
+  echo "  Master key already exists. Skipping. (use --force to recreate)"
+  NORISH_KEY="(already configured)"
+else
+  NORISH_KEY=$(openssl rand -base64 32)
+  echo "MASTER_KEY=${NORISH_KEY}" | ssh "${TARGET}" "sudo tee /etc/nixos/secrets/norish-env > /dev/null"
+  ssh "${TARGET}" "sudo chmod 644 /etc/nixos/secrets/norish-env"
+  echo "  ✓ Norish master key generated and written to /etc/nixos/secrets/norish-env"
+fi
+
 # --- Store in 1Password ---
 echo ""
 echo "Storing credentials in 1Password..."
@@ -177,6 +192,18 @@ if [[ "${HA_PASS}" != "(already configured)" && "${HA_PASS}" != "(setup failed"*
   echo "  ✓ Created 'Homelab - Home Assistant' in 1Password"
 fi
 
+if [[ "${NORISH_KEY}" != "(already configured)" ]]; then
+  op item delete "Homelab - Norish" --archive 2>/dev/null || true
+  op item create \
+    --category=login \
+    --title="Homelab - Norish" \
+    --url="http://192.168.178.83:8083" \
+    "master_key[password]=${NORISH_KEY}" \
+    "Local URL[url]=http://norish.home.lan" \
+    > /dev/null
+  echo "  ✓ Created 'Homelab - Norish' in 1Password"
+fi
+
 echo ""
 echo "========================================"
 echo "  Setup Complete!"
@@ -184,5 +211,6 @@ echo "========================================"
 echo ""
 echo "  AdGuard Home:    http://192.168.178.83:3000  (admin)"
 echo "  Home Assistant:  http://192.168.178.83:8123  (admin)"
+echo "  Norish:          http://192.168.178.83:8083"
 echo "  Dashboard:       http://192.168.178.83:8082"
 echo ""
