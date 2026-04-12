@@ -198,10 +198,9 @@ else
     sleep 2
   done
 
-  # Register bouncer and get API key
-  BOUNCER_KEY=$(ssh "${TARGET}" "sudo cscli -c /etc/crowdsec/config.yaml bouncers add firewall-bouncer --output raw 2>/dev/null || \
-    sudo cscli -c /etc/crowdsec/config.yaml bouncers delete firewall-bouncer 2>/dev/null && \
-    sudo cscli -c /etc/crowdsec/config.yaml bouncers add firewall-bouncer --output raw")
+  # Register bouncer and get API key (delete first in case it already exists)
+  ssh "${TARGET}" "sudo cscli -c /etc/crowdsec/config.yaml bouncers delete firewall-bouncer" &>/dev/null || true
+  BOUNCER_KEY=$(ssh "${TARGET}" "sudo cscli -c /etc/crowdsec/config.yaml bouncers add firewall-bouncer --output raw")
 
   if [[ -n "${BOUNCER_KEY}" ]]; then
     # Write bouncer config with the API key
