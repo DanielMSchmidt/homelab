@@ -9,6 +9,7 @@
     ../../modules/home-assistant.nix
     ../../modules/cloudflared.nix
     ../../modules/homepage.nix
+    ../../modules/norish.nix
     ../../modules/backup.nix
   ];
 
