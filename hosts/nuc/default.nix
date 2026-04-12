@@ -19,10 +19,10 @@
 
   # Static IP — change to match your LAN
   networking.interfaces.eno1.ipv4.addresses = [{
-    address = "192.168.1.50";
+    address = "192.168.178.83";
     prefixLength = 24;
   }];
-  networking.defaultGateway = "192.168.1.1";
+  networking.defaultGateway = "192.168.178.1";
   # Points to AdGuard Home on localhost — use "1.1.1.1" until AdGuard is running
   networking.nameservers = [ "127.0.0.1" ];
 
