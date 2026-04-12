@@ -30,6 +30,8 @@
       isNormalUser = true;
       extraGroups = [ "wheel" ];
       openssh.authorizedKeys.keys = config.homelab.sshKeys;
+      # Fallback password for console/SSH access — change after first login
+      initialPassword = "changeme";
     };
 
     # Allow admin to sudo without password (convenience for single-user homelab)
