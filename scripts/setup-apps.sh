@@ -134,7 +134,7 @@ if [[ "${ADGUARD_PASS}" != "(already configured)" && "${ADGUARD_PASS}" != "(setu
     --url="http://192.168.178.83:3000" \
     "username=admin" \
     "password=${ADGUARD_PASS}" \
-    "Tunnel URL[text]=https://adguard.danielmschmidt.de" \
+    "Tunnel URL[url]=https://adguard.danielmschmidt.de" \
     > /dev/null
   echo "  ✓ Created 'Homelab - AdGuard Home' in 1Password"
 fi
@@ -147,7 +147,7 @@ if [[ "${HA_PASS}" != "(already configured)" && "${HA_PASS}" != "(setup failed"*
     --url="http://192.168.178.83:8123" \
     "username=admin" \
     "password=${HA_PASS}" \
-    "Tunnel URL[text]=https://hass.danielmschmidt.de" \
+    "Tunnel URL[url]=https://hass.danielmschmidt.de" \
     > /dev/null
   echo "  ✓ Created 'Homelab - Home Assistant' in 1Password"
 fi
