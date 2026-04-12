@@ -17,6 +17,7 @@
     paths = [
       "/var/lib/AdGuardHome"
       "/var/lib/hass"
+      "/var/lib/norish"
       "/etc/nixos/secrets"
     ];
 
