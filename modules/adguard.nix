@@ -30,8 +30,10 @@ in
           "1.1.1.1"
           "9.9.9.9"
         ];
-        # Local DNS rewrites — devices on the LAN resolve to NUC directly,
-        # bypassing Cloudflare. Same URLs work both locally and remotely.
+      };
+      # Local DNS rewrites — devices on the LAN resolve to NUC directly,
+      # bypassing Cloudflare. Same URLs work both locally and remotely.
+      filtering = {
         rewrites = [
           { domain = "*.home.lan"; answer = nucIp; }
           { domain = "adguard.${domain}"; answer = nucIp; }
