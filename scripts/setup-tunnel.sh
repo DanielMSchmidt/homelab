@@ -7,30 +7,25 @@ set -euo pipefail
 # Usage: bash scripts/setup-tunnel.sh
 #
 # Prerequisites:
-#   - cloudflared CLI installed and logged in (cloudflared tunnel login)
+#   - Nix installed
+#   - cloudflared logged in (nix run nixpkgs#cloudflared -- tunnel login)
 
 TUNNEL_NAME="homelab"
 DOMAIN="danielmschmidt.de"
 SUBDOMAINS=("adguard" "hass" "home" "norish")
+CLOUDFLARED="nix run nixpkgs#cloudflared --"
 
 echo "========================================"
 echo "  Set Up Cloudflare Tunnel"
 echo "========================================"
 echo ""
 
-if ! command -v cloudflared &>/dev/null; then
-  echo "Error: cloudflared not found."
-  echo "  Install: brew install cloudflare/cloudflare/cloudflared"
-  echo "  Or: nix-shell -p cloudflared"
-  exit 1
-fi
-
 # Check if tunnel already exists
-if cloudflared tunnel list | grep -q "${TUNNEL_NAME}"; then
+if ${CLOUDFLARED} tunnel list | grep -q "${TUNNEL_NAME}"; then
   echo "Tunnel '${TUNNEL_NAME}' already exists."
 else
   echo "Creating tunnel '${TUNNEL_NAME}'..."
-  cloudflared tunnel create "${TUNNEL_NAME}"
+  ${CLOUDFLARED} tunnel create "${TUNNEL_NAME}"
 fi
 
 echo ""
@@ -39,7 +34,7 @@ echo "Setting up DNS routes..."
 for sub in "${SUBDOMAINS[@]}"; do
   FQDN="${sub}.${DOMAIN}"
   echo -n "  ${FQDN} → "
-  if cloudflared tunnel route dns "${TUNNEL_NAME}" "${FQDN}" 2>&1 | grep -q "already exists"; then
+  if ${CLOUDFLARED} tunnel route dns "${TUNNEL_NAME}" "${FQDN}" 2>&1 | grep -q "already exists"; then
     echo "already exists"
   else
     echo "created"
