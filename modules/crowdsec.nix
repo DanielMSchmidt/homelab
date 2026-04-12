@@ -149,6 +149,9 @@ in
           if ! grep -q "login:" ${dataDir}/credentials/online_api_credentials.yaml 2>/dev/null; then
             ${cscli} capi register || true
           fi
+
+          # Ensure all data files are owned by crowdsec (init runs as root)
+          chown -R crowdsec:crowdsec ${dataDir}
         '';
       in "+${initScript}";
       ExecStart = "${pkgs.crowdsec}/bin/crowdsec -c ${configDir}/config.yaml";
