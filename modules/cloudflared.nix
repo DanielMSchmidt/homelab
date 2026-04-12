@@ -17,6 +17,7 @@
           "adguard.${config.homelab.domain}" = "http://localhost:3000";
           "hass.${config.homelab.domain}" = "http://localhost:8123";
           "home.${config.homelab.domain}" = "http://localhost:8082";
+          "norish.${config.homelab.domain}" = "http://localhost:8083";
         };
         default = "http_status:404";
       };
