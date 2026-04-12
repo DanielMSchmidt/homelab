@@ -43,6 +43,9 @@ echo "  ✓ Cloudflare tunnel credentials"
 ORIGIN_CERT=$(ssh nuc 'sudo cat /etc/nixos/secrets/cloudflared-cert.pem')
 echo "  ✓ Cloudflare origin certificate"
 
+NORISH_ENV=$(ssh nuc 'sudo cat /etc/nixos/secrets/norish-env')
+echo "  ✓ Norish env file"
+
 echo ""
 
 # Delete existing item if it exists (to avoid duplicates)
@@ -63,6 +66,7 @@ op item create \
   "restic_password[password]=${RESTIC_PASSWORD}" \
   "tunnel_credentials[password]=${TUNNEL_CREDS}" \
   "origin_cert[password]=${ORIGIN_CERT}" \
+  "norish_env[password]=${NORISH_ENV}" \
   "SSH Command[text]=ssh nuc" \
   "AdGuard Home[text]=http://192.168.178.83:3000" \
   "Home Assistant[text]=http://192.168.178.83:8123" \

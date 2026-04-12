@@ -52,6 +52,9 @@ echo "  ✓ Cloudflare tunnel credentials"
 ORIGIN_CERT=$(op item get "${ITEM_NAME}" --fields origin_cert)
 echo "  ✓ Cloudflare origin certificate"
 
+NORISH_ENV=$(op item get "${ITEM_NAME}" --fields norish_env)
+echo "  ✓ Norish env file"
+
 echo ""
 echo "Writing secrets to ${TARGET}..."
 
@@ -68,6 +71,10 @@ echo "  ✓ Cloudflare tunnel credentials"
 echo "${ORIGIN_CERT}" | ssh "${TARGET}" "sudo tee /etc/nixos/secrets/cloudflared-cert.pem > /dev/null"
 ssh "${TARGET}" "sudo chmod 644 /etc/nixos/secrets/cloudflared-cert.pem"
 echo "  ✓ Cloudflare origin certificate"
+
+echo "${NORISH_ENV}" | ssh "${TARGET}" "sudo tee /etc/nixos/secrets/norish-env > /dev/null"
+ssh "${TARGET}" "sudo chmod 644 /etc/nixos/secrets/norish-env"
+echo "  ✓ Norish env file"
 
 echo ""
 echo "✓ All secrets restored to ${TARGET}"
