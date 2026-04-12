@@ -37,17 +37,9 @@ if ! op whoami &>/dev/null; then
   exit 1
 fi
 
-# Generate strong passwords (30 chars, alphanumeric + symbols)
-ADGUARD_PASS=$(op item create --generate-password='30,letters,digits,symbols' --dry-run --category=login --title=tmp 2>/dev/null | grep -o 'password.*' | head -1 | cut -d'"' -f3 || head -c 32 /dev/urandom | base64 | tr -d '/+=' | head -c 30)
-HA_PASS=$(op item create --generate-password='30,letters,digits,symbols' --dry-run --category=login --title=tmp 2>/dev/null | grep -o 'password.*' | head -1 | cut -d'"' -f3 || head -c 32 /dev/urandom | base64 | tr -d '/+=' | head -c 30)
-
-# Fallback if op password gen didn't work
-if [[ -z "${ADGUARD_PASS}" ]]; then
-  ADGUARD_PASS=$(head -c 32 /dev/urandom | base64 | tr -d '/+=' | head -c 30)
-fi
-if [[ -z "${HA_PASS}" ]]; then
-  HA_PASS=$(head -c 32 /dev/urandom | base64 | tr -d '/+=' | head -c 30)
-fi
+# Generate strong passwords (30 chars, alphanumeric — avoids shell escaping issues)
+ADGUARD_PASS=$(head -c 32 /dev/urandom | base64 | tr -d '/+=\n' | head -c 30)
+HA_PASS=$(head -c 32 /dev/urandom | base64 | tr -d '/+=\n' | head -c 30)
 
 # --- AdGuard Home ---
 echo "Setting up AdGuard Home..."
@@ -59,19 +51,33 @@ if [[ "${AG_HAS_USERS}" -gt 0 ]]; then
   echo "  AdGuard Home already has users configured. Skipping."
   ADGUARD_PASS="(already configured)"
 else
-  # Generate bcrypt hash on the NUC
-  echo "  Generating password hash (may take a moment)..."
-  ESCAPED_PASS=$(printf '%s' "${ADGUARD_PASS}" | sed 's/\\/\\\\/g; s/"/\\"/g')
-  AG_HASH=$(ssh "${TARGET}" "nix-shell -p python3Packages.bcrypt --run 'python3 -c \"import bcrypt; print(bcrypt.hashpw(b\\\"${ESCAPED_PASS}\\\", bcrypt.gensalt()).decode())\"'" 2>/dev/null)
+  # Generate bcrypt hash on the NUC — write password to temp file to avoid escaping issues
+  echo "  Generating password hash (may take a moment on first run)..."
+  echo -n "${ADGUARD_PASS}" | ssh "${TARGET}" 'cat > /tmp/.ag-pass'
+  AG_HASH=$(ssh "${TARGET}" "nix-shell -p python3Packages.bcrypt --run 'python3 -c \"
+import bcrypt
+with open(\\\"/tmp/.ag-pass\\\", \\\"rb\\\") as f:
+    pw = f.read()
+print(bcrypt.hashpw(pw, bcrypt.gensalt()).decode())
+\"'" 2>/dev/null)
+  ssh "${TARGET}" 'rm -f /tmp/.ag-pass'
 
   if [[ -z "${AG_HASH}" ]]; then
     echo "  Error: Failed to generate bcrypt hash."
     exit 1
   fi
 
-  # Stop AdGuard, inject user into config, restart
+  # Stop AdGuard, write updated users section, restart
   ssh "${TARGET}" "sudo systemctl stop adguardhome"
-  ssh "${TARGET}" "sudo sed -i 's/^users: \[\]/users:\n- name: ${ADGUARD_USER}\n  password: ${AG_HASH}/' /var/lib/AdGuardHome/AdGuardHome.yaml"
+  # Use python3 (from nix-shell) to safely edit YAML
+  ssh "${TARGET}" "nix-shell -p python3 --run 'python3 -c \"
+import re
+with open(\\\"/var/lib/AdGuardHome/AdGuardHome.yaml\\\") as f:
+    cfg = f.read()
+cfg = cfg.replace(\\\"users: []\\\", \\\"users:\\n- name: ${ADGUARD_USER}\\n  password: ${AG_HASH}\\\")
+with open(\\\"/var/lib/AdGuardHome/AdGuardHome.yaml\\\", \\\"w\\\") as f:
+    f.write(cfg)
+\"'" 2>/dev/null
   ssh "${TARGET}" "sudo systemctl start adguardhome"
 
   echo "  ✓ AdGuard Home account created (user: ${ADGUARD_USER})"
@@ -88,17 +94,19 @@ if [[ -z "${HA_USER_DONE}" ]]; then
   echo "  Home Assistant already onboarded. Skipping."
   HA_PASS="(already configured)"
 else
-  # Create the initial user via onboarding API
-  ESCAPED_HA_PASS=$(printf '%s' "${HA_PASS}" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')
+  # Create the initial user via onboarding API — write JSON payload via temp file
+  cat <<HAJSON | ssh "${TARGET}" 'cat > /tmp/.ha-payload.json'
+{
+  "client_id": "http://localhost:8123/",
+  "name": "${HA_NAME}",
+  "username": "${HA_USER}",
+  "password": "${HA_PASS}",
+  "language": "en"
+}
+HAJSON
   HA_RESPONSE=$(ssh "${TARGET}" "curl -sf http://localhost:8123/api/onboarding/users \
     -H 'Content-Type: application/json' \
-    -d '{
-      \"client_id\": \"http://localhost:8123/\",
-      \"name\": \"${HA_NAME}\",
-      \"username\": \"${HA_USER}\",
-      \"password\": ${ESCAPED_HA_PASS},
-      \"language\": \"en\"
-    }'" 2>/dev/null)
+    -d @/tmp/.ha-payload.json; rm -f /tmp/.ha-payload.json" 2>/dev/null)
 
   if echo "${HA_RESPONSE}" | grep -q "auth_code"; then
     echo "  ✓ Home Assistant account created (user: ${HA_USER})"
