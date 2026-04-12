@@ -7,7 +7,10 @@ set -euo pipefail
 # Usage: bash scripts/setup-apps.sh
 
 TARGET="nuc"
-OP_ITEM="Homelab NUC"
+FORCE=false
+if [[ "${1:-}" == "--force" ]]; then
+  FORCE=true
+fi
 
 echo "========================================"
 echo "  Set Up Homelab App Accounts"
@@ -36,8 +39,8 @@ echo "Setting up AdGuard Home..."
 
 AG_HAS_USERS=$(ssh "${TARGET}" 'sudo grep -A1 "^users:" /var/lib/AdGuardHome/AdGuardHome.yaml | grep -c "name:" 2>/dev/null || echo 0' | tail -1)
 
-if [[ "${AG_HAS_USERS}" -gt 0 ]]; then
-  echo "  Already has users configured. Skipping."
+if [[ "${AG_HAS_USERS}" -gt 0 ]] && ! $FORCE; then
+  echo "  Already has users configured. Skipping. (use --force to recreate)"
   ADGUARD_PASS="(already configured)"
 else
   echo "  Generating password hash (downloads python+bcrypt on first run)..."
@@ -59,7 +62,9 @@ print(bcrypt.hashpw(pw, bcrypt.gensalt()).decode())
 # Stop AdGuard, update config, restart
 sudo systemctl stop adguardhome
 
-# Edit AdGuard config using sed (available without nix-shell)
+# Edit AdGuard config — replace existing users section or empty one
+sudo sed -i '/^users:/,/^[a-z]/{ /^users:/{ s|.*|users:\n- name: '"${USERNAME}"'\n  password: '"${HASH}"'| }; /^- name:/d; /^  password:/d; }' /var/lib/AdGuardHome/AdGuardHome.yaml
+# Fallback: if the simple pattern didn't match, try the empty array pattern
 sudo sed -i "s|^users: \[\]|users:\n- name: ${USERNAME}\n  password: ${HASH}|" /var/lib/AdGuardHome/AdGuardHome.yaml
 
 sudo systemctl start adguardhome
@@ -83,6 +88,10 @@ echo "Setting up Home Assistant..."
 HA_ONBOARD=$(ssh "${TARGET}" 'curl -sf http://localhost:8123/api/onboarding' 2>/dev/null || echo "[]")
 
 if ! echo "${HA_ONBOARD}" | grep -q '"step":"user","done":false'; then
+  if $FORCE; then
+    echo "  Already onboarded. Cannot recreate HA account via API."
+    echo "  The password from the original setup will not be stored."
+  fi
   echo "  Already onboarded. Skipping."
   HA_PASS="(already configured)"
 else
