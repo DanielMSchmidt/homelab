@@ -10,12 +10,21 @@
       ../modules/caddy.nix
       ../modules/home-assistant.nix
       ../modules/cloudflared.nix
+      ../modules/norish.nix
     ];
 
     # Disable cloudflared in test — it needs real Cloudflare credentials and network
     # access, neither of which exist in a test VM. The module is validated by flake eval.
     services.cloudflared.tunnels.homelab.credentialsFile = lib.mkForce "${pkgs.writeText "dummy-creds" "{}"}";
     systemd.services.cloudflared-tunnel-homelab.enable = lib.mkForce false;
+
+    # Disable norish containers in test — OCI containers need image pulls and a
+    # container runtime that don't exist in a test VM. The module is validated by flake eval.
+    systemd.services."podman-norish-network".enable = lib.mkForce false;
+    systemd.services."podman-norish".enable = lib.mkForce false;
+    systemd.services."podman-norish-db".enable = lib.mkForce false;
+    systemd.services."podman-norish-redis".enable = lib.mkForce false;
+    systemd.services."podman-norish-chrome".enable = lib.mkForce false;
 
     # Provide a dummy SSH key so common.nix evaluates
     homelab.sshKeys = [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAItest test@test" ];
@@ -48,5 +57,8 @@
 
     # Cloudflare Tunnel: module is validated by flake eval, but the service
     # is disabled in test (needs real credentials + network access)
+
+    # Norish: module is validated by flake eval, but containers are disabled
+    # in test (needs image pulls + container runtime not available in test VM)
   '';
 }
