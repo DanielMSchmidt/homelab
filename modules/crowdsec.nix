@@ -119,7 +119,7 @@ in
     after = [ "network.target" ];
 
     serviceConfig = {
-      Type = "notify";
+      Type = "simple";
       User = "crowdsec";
       Group = "crowdsec";
       ExecStartPre = let
@@ -169,7 +169,7 @@ in
     requires = [ "crowdsec.service" ];
 
     serviceConfig = {
-      Type = "notify";
+      Type = "simple";
       ExecStart = "${pkgs.crowdsec-firewall-bouncer}/bin/cs-firewall-bouncer -c /etc/nixos/secrets/crowdsec-bouncer.yaml";
       Restart = "always";
       RestartSec = 10;
