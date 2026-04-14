@@ -106,6 +106,9 @@ in
   systemd.services."podman-${redisContainer}" = {
     after = [ "podman-norish-network.service" ];
     requires = [ "podman-norish-network.service" ];
+    serviceConfig.ExecStartPre = [
+      "+${pkgs.bash}/bin/bash -c '${pkgs.coreutils}/bin/chown -R root:root /var/lib/norish/redis'"
+    ];
   };
   systemd.services."podman-${chromeContainer}" = {
     after = [ "podman-norish-network.service" ];
