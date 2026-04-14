@@ -6,6 +6,7 @@ in
   services.homepage-dashboard = {
     enable = true;
     listenPort = 8082;
+    environmentFile = "/etc/nixos/secrets/homepage.env";
 
     settings = {
       title = "Homelab";
@@ -25,6 +26,8 @@ in
               widget = {
                 type = "adguard";
                 url = "http://localhost:3000";
+                username = "admin";
+                password = "{{HOMEPAGE_VAR_ADGUARD_PASSWORD}}";
               };
             };
           }
