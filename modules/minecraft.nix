@@ -24,22 +24,6 @@ let
     above-bedrock-nether-building: true
   '';
 
-  # playit.gg agent — tunnels UDP for remote Bedrock access
-  playitVersion = "0.17.1";
-  playitBin = pkgs.stdenv.mkDerivation {
-    pname = "playit";
-    version = playitVersion;
-    src = pkgs.fetchurl {
-      url = "https://github.com/playit-cloud/playit-agent/releases/download/v${playitVersion}/playit-linux-amd64";
-      hash = "sha256-541GPZOqHj7Dagbe1aH0/oeZBf3OuGXfj0zvYST4pVU=";
-    };
-    dontUnpack = true;
-    installPhase = ''
-      mkdir -p $out/bin
-      cp $src $out/bin/playit
-      chmod +x $out/bin/playit
-    '';
-  };
 in
 {
   # ── Java Minecraft Server (NixOS built-in module) ──────────────
@@ -104,21 +88,10 @@ in
   };
 
   # ── playit.gg Agent (UDP tunnel for remote access) ────────────
-  # Secret created during setup: sign up at playit.gg, create UDP tunnel,
-  # save token to /etc/nixos/secrets/playit-secret.toml
-  systemd.services.playit = {
-    description = "playit.gg Tunnel Agent";
-    wantedBy = [ "multi-user.target" ];
-    after = [ "geyser.service" "network-online.target" ];
-    wants = [ "network-online.target" ];
-
-    serviceConfig = {
-      Type = "simple";
-      ExecStart = "${playitBin}/bin/playit --secret_path /etc/nixos/secrets/playit-secret.toml";
-      Restart = "always";
-      RestartSec = 15;
-      DynamicUser = true;
-    };
+  # Secret obtained by claiming an agent: see scripts/setup-playit.sh
+  services.playit = {
+    enable = true;
+    secretPath = "/etc/nixos/secrets/playit-secret.toml";
   };
 
   # ── Firewall ──────────────────────────────────────────────────

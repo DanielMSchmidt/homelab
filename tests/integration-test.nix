@@ -1,10 +1,12 @@
 # Function form so pkgs is in scope for testScript interpolation
+{ playitModule }:
 { pkgs, ... }:
 {
   name = "integration";
 
   nodes.machine = { pkgs, lib, ... }: {
     imports = [
+      playitModule
       ../modules/common.nix
       ../modules/adguard.nix
       ../modules/caddy.nix
@@ -35,7 +37,7 @@
     systemd.services.crowdsec-firewall-bouncer.enable = lib.mkForce false;
 
     # Disable playit.gg in test — needs internet access
-    systemd.services.playit.enable = lib.mkForce false;
+    services.playit.enable = lib.mkForce false;
 
     # Disable auto-upgrade in test — needs network access to GitHub
     system.autoUpgrade.enable = lib.mkForce false;

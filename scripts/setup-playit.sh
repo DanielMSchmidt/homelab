@@ -4,14 +4,19 @@ set -euo pipefail
 # Sets up a playit.gg tunnel for the Minecraft Bedrock server (GeyserMC).
 # Run from your laptop after deploying the Minecraft module.
 #
+# This script runs the playit-cli claim flow locally, then copies
+# the resulting secret TOML file to the NUC.
+#
 # Usage: bash scripts/setup-playit.sh
 #
 # Prerequisites:
 #   - NUC deployed with the minecraft module
 #   - A playit.gg account (https://playit.gg)
+#   - Nix installed locally
 
 TARGET="nuc"
 SECRET_PATH="/etc/nixos/secrets/playit-secret.toml"
+LOCAL_SECRET="$HOME/.config/playit_gg/playit.toml"
 
 echo "========================================"
 echo "  Set Up playit.gg Tunnel"
@@ -37,25 +42,34 @@ if [[ "${SECRET_EXISTS}" == "yes" ]]; then
   fi
 fi
 
+echo "Starting playit-cli to claim a new agent..."
 echo ""
-echo "To get your playit.gg secret:"
-echo "  1. Go to https://playit.gg and sign in"
-echo "  2. Click 'Add Tunnel' > select 'Custom UDP'"
-echo "  3. Set local port to 19132"
-echo "  4. Create an agent and copy the secret key"
+echo "  1. A URL will appear — open it in your browser"
+echo "  2. Sign in to playit.gg and claim the agent"
+echo "  3. Once claimed, the agent starts running — press Ctrl+C to stop it"
+echo "  4. Then configure your tunnel at https://playit.gg/account/tunnels"
+echo "     (Custom UDP, local port 19132)"
 echo ""
-read -rp "Paste your playit.gg secret key: " PLAYIT_SECRET
+read -rp "Press Enter to continue..."
 
-if [[ -z "${PLAYIT_SECRET}" ]]; then
-  echo "Error: No secret provided."
+# Run the playit-cli claim flow
+nix run github:pedorich-n/playit-nixos-module#playit-cli -- start
+
+# Check if secret was created
+if [[ ! -f "${LOCAL_SECRET}" ]]; then
+  echo ""
+  echo "Error: Secret file not found at ${LOCAL_SECRET}"
+  echo "The claim may not have completed. Try again."
   exit 1
 fi
 
-# Write the secret to the NUC
-echo "${PLAYIT_SECRET}" | ssh "${TARGET}" "sudo tee ${SECRET_PATH} > /dev/null"
-ssh "${TARGET}" "sudo chmod 600 ${SECRET_PATH}"
-
 echo ""
+echo "Agent claimed. Copying secret to NUC..."
+
+# Copy secret to NUC
+scp "${LOCAL_SECRET}" "${TARGET}:/tmp/playit-secret.toml"
+ssh "${TARGET}" "sudo mv /tmp/playit-secret.toml ${SECRET_PATH} && sudo chmod 600 ${SECRET_PATH}"
+
 echo "  Secret written to ${SECRET_PATH}"
 
 # Restart the playit service
@@ -72,8 +86,11 @@ if [[ "${PLAYIT_STATUS}" == "active" ]]; then
   echo "  playit.gg Tunnel Active!"
   echo "========================================"
   echo ""
-  echo "  On your Switch, add a server with"
-  echo "  the address from your playit.gg dashboard."
+  echo "  Next steps:"
+  echo "    1. Go to https://playit.gg/account/tunnels"
+  echo "    2. Add a tunnel: Custom UDP, local port 19132"
+  echo "    3. On your Switch, add a server with the"
+  echo "       playit.gg address shown in the dashboard"
   echo ""
   echo "  For LAN play: 192.168.178.83:19132"
 else
@@ -81,7 +98,4 @@ else
   echo "========================================"
   echo ""
   echo "  Check logs: ssh ${TARGET} 'journalctl -u playit -n 50'"
-  echo ""
-  echo "  The secret format might need to be a TOML file."
-  echo "  Check playit.gg docs for the expected format."
 fi

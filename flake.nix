@@ -8,9 +8,12 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    playit-nixos-module = {
+      url = "github:pedorich-n/playit-nixos-module";
+    };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, disko, ... }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, disko, playit-nixos-module, ... }:
   let
     linuxSystem = "x86_64-linux";
     unstablePkgs = import nixpkgs-unstable { system = linuxSystem; };
@@ -26,6 +29,7 @@
       modules = [
         { nixpkgs.overlays = [ overlay ]; }
         disko.nixosModules.disko
+        playit-nixos-module.nixosModules.default
         ./hosts/nuc
       ];
     };
@@ -42,6 +46,7 @@
         };
         imports = [
           disko.nixosModules.disko
+          playit-nixos-module.nixosModules.default
           ./hosts/nuc
         ];
       };
@@ -50,8 +55,12 @@
     checks.${linuxSystem} = {
       adguard = linuxPkgs.nixosTest (import ./tests/adguard-test.nix);
       caddy = linuxPkgs.nixosTest (import ./tests/caddy-test.nix);
-      minecraft = linuxPkgs.nixosTest (import ./tests/minecraft-test.nix);
-      integration = linuxPkgs.nixosTest (import ./tests/integration-test.nix);
+      minecraft = linuxPkgs.nixosTest (import ./tests/minecraft-test.nix {
+        playitModule = playit-nixos-module.nixosModules.default;
+      });
+      integration = linuxPkgs.nixosTest (import ./tests/integration-test.nix {
+        playitModule = playit-nixos-module.nixosModules.default;
+      });
     };
 
     devShells = forAllSystems (system:

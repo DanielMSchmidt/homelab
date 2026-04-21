@@ -1,9 +1,11 @@
+{ playitModule }:
 { pkgs, ... }:
 {
   name = "minecraft";
 
   nodes.machine = { pkgs, lib, ... }: {
     imports = [
+      playitModule
       ../modules/common.nix
       ../modules/minecraft.nix
     ];
@@ -14,7 +16,7 @@
       builtins.elem (lib.getName pkg) [ "minecraft-server" ];
 
     # Disable playit.gg in test — needs internet access to connect to playit servers
-    systemd.services.playit.enable = lib.mkForce false;
+    services.playit.enable = lib.mkForce false;
 
     # Give the VM enough memory for the Minecraft server
     virtualisation.memorySize = 4096;
