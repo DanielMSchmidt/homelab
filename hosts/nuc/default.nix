@@ -13,6 +13,7 @@
     ../../modules/auto-upgrade.nix
     ../../modules/crowdsec.nix
     ../../modules/backup.nix
+    ../../modules/minecraft.nix
   ];
 
   # ============================================================
