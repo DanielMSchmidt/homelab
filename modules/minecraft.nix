@@ -83,7 +83,7 @@ in
     group = "geyser";
     home = "/var/lib/geyser";
   };
-  users.groups.geyser = {};
+  users.groups.geyser = { };
 
   systemd.services.geyser = {
     description = "GeyserMC Bedrock-to-Java Proxy";
