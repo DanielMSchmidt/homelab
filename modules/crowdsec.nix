@@ -57,7 +57,7 @@ let
     ---
     source: file
     filenames:
-      - /var/log/caddy/*.log
+      - /var/log/caddy/**/*.log
     labels:
       type: caddy
   '';
@@ -102,13 +102,13 @@ in
     "d ${configDir}/acquis.d 0755 root root -"
     "d ${configDir}/notifications 0755 root root -"
     "d ${configDir}/plugins 0755 root root -"
-    "d /var/log/caddy 0755 caddy caddy -"
+    "d /var/log/caddy 0750 caddy caddy -"
   ];
 
   users.users.crowdsec = {
     isSystemUser = true;
     group = "crowdsec";
-    extraGroups = [ "systemd-journal" ];
+    extraGroups = [ "systemd-journal" "caddy" ];
     home = dataDir;
   };
   users.groups.crowdsec = {};

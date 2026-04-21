@@ -9,6 +9,8 @@ Declarative NixOS homelab running on an Intel NUC. Everything is defined in code
 | **AdGuard Home** | Blocks ads and malware at the DNS level | `http://adguard.home.lan` |
 | **Home Assistant** | Home automation hub | `http://hass.home.lan` |
 | **Caddy** | Reverse proxy -- gives services friendly URLs | Automatic |
+| **Homepage** | Dashboard showing all services and system stats | `http://home.home.lan` |
+| **CrowdSec** | Intrusion detection & prevention (firewall bouncer) | Localhost only (API on `127.0.0.1:8080`) |
 | **Cloudflare Tunnel** | Secure remote access via your Cloudflare domain | `adguard.yourdomain.com`, `hass.yourdomain.com` |
 
 ## Prerequisites
@@ -139,6 +141,18 @@ Now you can access locally:
 Remotely (via Cloudflare Tunnel):
 - `https://adguard.yourdomain.com` -> AdGuard Home
 - `https://hass.yourdomain.com` -> Home Assistant
+
+### 7. Secure the Homepage Dashboard
+
+The homepage dashboard (`home.yourdomain.com`) is exposed to the internet via Cloudflare Tunnel and shows service status including CrowdSec alerts. It is protected with HTTP basic auth via Caddy.
+
+Run the setup script to generate credentials, deploy, and store them in 1Password:
+
+```bash
+bash scripts/rotate-dashboard-password.sh
+```
+
+This generates a random username and password, hashes it with bcrypt via Caddy on the NUC, updates `caddy.nix`, deploys, and saves the credentials in 1Password under **"Homelab Dashboard (home.danielmschmidt.de)"**. Run it again anytime to rotate credentials.
 
 ## Day-to-Day Usage
 
@@ -316,6 +330,7 @@ scripts/
   setup-apps.sh        # Create AdGuard Home + Home Assistant accounts, store in 1Password
   secrets-to-op.sh     # Store all secrets in 1Password
   secrets-from-op.sh   # Restore secrets from 1Password to NUC
+  rotate-dashboard-password.sh  # Generate, deploy, and store dashboard credentials
   restore-backup.sh    # Restore service data from restic USB backup
 deploy.sh              # Deploy changes from laptop
 ```
