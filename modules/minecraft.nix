@@ -17,7 +17,7 @@ let
     remote:
       address: 127.0.0.1
       port: 25565
-      auth-type: offline
+      auth-type: online
     command-suggestions: true
     passthrough-motd: true
     passthrough-player-counts: true
@@ -42,10 +42,6 @@ let
   };
 in
 {
-  # Allow the unfree minecraft-server package
-  nixpkgs.config.allowUnfreePredicate = pkg:
-    builtins.elem (lib.getName pkg) [ "minecraft-server" ];
-
   # ── Java Minecraft Server (NixOS built-in module) ──────────────
   services.minecraft-server = {
     enable = true;
@@ -56,16 +52,22 @@ in
 
     serverProperties = {
       server-port = 25565;
+      # Bind to localhost only — GeyserMC and direct LAN Java clients connect here
       server-ip = "127.0.0.1";
       motd = "Homelab Minecraft";
       max-players = 10;
       gamemode = "survival";
       difficulty = "normal";
+      # Must be false for GeyserMC to proxy Bedrock players
+      # Security is handled by the whitelist + GeyserMC's Xbox Live auth (auth-type: online)
       online-mode = false;
       white-list = true;
       enforce-whitelist = true;
     };
 
+    # Whitelist — add players here as "name" = "offline-uuid"
+    # For Bedrock players via GeyserMC, the name is prefixed with "."
+    # Generate offline UUID: https://minecraft-serverlist.com/tools/offline-uuid
     whitelist = {
       # Example: ".SwitchPlayerName" = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
     };
@@ -102,6 +104,8 @@ in
   };
 
   # ── playit.gg Agent (UDP tunnel for remote access) ────────────
+  # Secret created during setup: sign up at playit.gg, create UDP tunnel,
+  # save token to /etc/nixos/secrets/playit-secret.toml
   systemd.services.playit = {
     description = "playit.gg Tunnel Agent";
     wantedBy = [ "multi-user.target" ];

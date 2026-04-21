@@ -45,6 +45,10 @@
   # Your Cloudflare-managed domain
   homelab.domain = "danielmschmidt.de";
 
+  # Allow unfree packages (e.g., minecraft-server)
+  nixpkgs.config.allowUnfreePredicate = pkg:
+    builtins.elem (lib.getName pkg) [ "minecraft-server" ];
+
   # ============================================================
 
   system.stateVersion = "24.11";
