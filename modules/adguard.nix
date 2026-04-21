@@ -40,6 +40,7 @@ in
           { domain = "hass.${domain}"; answer = nucIp; }
           { domain = "home.${domain}"; answer = nucIp; }
           { domain = "norish.${domain}"; answer = nucIp; }
+          { domain = "minecraft.${domain}"; answer = nucIp; }
           { domain = "fritz.box"; answer = "192.168.178.1"; }
         ];
       };

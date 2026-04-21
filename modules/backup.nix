@@ -20,6 +20,8 @@
       "/var/lib/norish"
       "/etc/nixos/secrets"
       "/var/lib/crowdsec"
+      "/var/lib/minecraft"
+      "/var/lib/geyser"
     ];
 
     # Daily at 3am, keep 7 daily + 4 weekly + 6 monthly snapshots

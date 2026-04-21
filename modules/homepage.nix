@@ -19,6 +19,24 @@ in
       {
         "Services" = [
           {
+            "Home Assistant" = {
+              icon = "home-assistant";
+              href = "https://hass.${domain}";
+              description = "Home automation";
+            };
+          }
+          {
+            "Norish" = {
+              icon = "mdi-food-apple";
+              href = "https://norish.${domain}";
+              description = "Recipe manager";
+            };
+          }
+        ];
+      }
+      {
+        "Security" = [
+          {
             "AdGuard Home" = {
               icon = "adguard-home";
               href = "https://adguard.${domain}";
@@ -32,17 +50,26 @@ in
             };
           }
           {
-            "Home Assistant" = {
-              icon = "home-assistant";
-              href = "https://hass.${domain}";
-              description = "Home automation";
+            "CrowdSec" = {
+              icon = "crowdsec";
+              href = "https://app.crowdsec.net";
+              description = "Intrusion detection & prevention";
+              widget = {
+                type = "crowdsec";
+                url = "http://localhost:8080";
+                username = "{{HOMEPAGE_VAR_CROWDSEC_USERNAME}}";
+                password = "{{HOMEPAGE_VAR_CROWDSEC_PASSWORD}}";
+              };
             };
           }
+        ];
+      }
+      {
+        "Gaming" = [
           {
-            "Norish" = {
-              icon = "mdi-food-apple";
-              href = "https://norish.${domain}";
-              description = "Recipe manager";
+            "Minecraft" = {
+              icon = "minecraft";
+              description = "Bedrock-compatible Minecraft server";
             };
           }
         ];
