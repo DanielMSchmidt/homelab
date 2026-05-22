@@ -71,11 +71,11 @@
     },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1778869304,
-        "narHash": "sha256-30sZNZoA1cqF5JNO9fVX+wgiQYjB7HJqqJ4ztCDeBZE=",
+        "lastModified": 1779259093,
+        "narHash": "sha256-7DKWmH23hL2eYdkxCKeqj2i+yljTKuU+3Nk1UPHOnxc=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "d233902339c02a9c334e7e593de68855ad26c4cb",
+        "rev": "d99b013d5d1931ad77fe3912ed218170dec5d9a4",
         "type": "github"
       },
       "original": {
@@ -108,11 +108,11 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1779286782,
-        "narHash": "sha256-s7Vc8QsQS55FbT+qUAM+P5m9V5B7qRzaoZxs4X7iKzc=",
+        "lastModified": 1779405039,
+        "narHash": "sha256-gLmtvdch0fpilV+YRQnACREChhi+oD7RY2wGZ3Butsg=",
         "owner": "pedorich-n",
         "repo": "playit-nixos-module",
-        "rev": "2c8a93708a0d9c3672f6ec9e87507ffcdec7ba36",
+        "rev": "98638fea3a0e0a829d8468077f563ca689e66a13",
         "type": "github"
       },
       "original": {
