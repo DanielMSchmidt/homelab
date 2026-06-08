@@ -81,5 +81,14 @@ in
     ];
   };
 
+  # homepage-dashboard reads its YAML config once at startup, so a change
+  # to services/widgets/settings/bookmarks needs an explicit restart.
+  systemd.services.homepage-dashboard.restartTriggers = [
+    config.environment.etc."homepage-dashboard/services.yaml".source
+    config.environment.etc."homepage-dashboard/widgets.yaml".source
+    config.environment.etc."homepage-dashboard/settings.yaml".source
+    config.environment.etc."homepage-dashboard/bookmarks.yaml".source
+  ];
+
   networking.firewall.allowedTCPPorts = [ 8082 ];
 }
