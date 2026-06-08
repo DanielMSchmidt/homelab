@@ -1,12 +1,6 @@
 { config, ... }:
 let
   domain = config.homelab.domain;
-  dashboardAuth = ''
-    basicauth {
-      883fc68b50662de7 $2a$14$Cm547Lqka36UNACuhfnC7uOYrYbBRUf4G/AjO6JOaji1XN3u8ZZFS
-    }
-    reverse_proxy localhost:8082
-  '';
 in
 {
   services.caddy = {
@@ -26,9 +20,13 @@ in
       reverse_proxy localhost:8123
     '';
 
-    virtualHosts."http://home.home.lan".extraConfig = dashboardAuth;
+    virtualHosts."http://home.home.lan".extraConfig = ''
+      reverse_proxy localhost:8082
+    '';
 
-    virtualHosts."http://home.${domain}".extraConfig = dashboardAuth;
+    virtualHosts."http://home.${domain}".extraConfig = ''
+      reverse_proxy localhost:8082
+    '';
 
     virtualHosts."http://norish.home.lan".extraConfig = ''
       reverse_proxy localhost:8083
